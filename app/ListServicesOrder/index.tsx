@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 
 import { useFilterServiceOrderStore } from "@/stores/useFilterServiceOrder";
 import { getServicesOrders } from "@/services/servicesOrders"
+import { retrieveUserSession } from "@/services/retrieveUserSession"
 
 import Card from "../../components/Card"
 import BottomNavigation from "../../components/BottomNavigation"
@@ -32,12 +33,38 @@ function ListServicesOrder(): JSX.Element {
     setLoading(true)
     setError(null)
     try {
-      const response = await getServicesOrders({ filters })
-      if (response?.data) {
-        setOrders(response.data)
-      } else {
+      // Don't attempt to fetch orders if the user is not authenticated on this device
+      const session = await retrieveUserSession()
+      const userObj = session && (session.data ? session.data : session)
+      if (!userObj || !userObj.email) {
+        console.log("fetchOrders: no local session, skipping remote fetch")
         setOrders([])
+        return
       }
+
+      const response = await getServicesOrders({ filters })
+      console.log('fetchOrders response shape:', response && Object.keys(response))
+
+      // Normalize possible response shapes: server may return array directly
+      // or wrap it in `data` (axios) or `data.data` (API wrapper).
+      let ordersData: any[] = []
+      if (!response) {
+        ordersData = []
+      } else if (Array.isArray(response.data)) {
+        ordersData = response.data
+      } else if (response.data && Array.isArray(response.data.data)) {
+        ordersData = response.data.data
+      } else if (response.data && Array.isArray(response.data.service_orders)) {
+        ordersData = response.data.service_orders
+      } else if (Array.isArray(response)) {
+        ordersData = response
+      } else {
+        // last resort: try to find any array in response object
+        const maybeArray = Object.values(response).find((v: any) => Array.isArray(v))
+        ordersData = Array.isArray(maybeArray) ? maybeArray : []
+      }
+
+      setOrders(ordersData)
     } catch (error: any) {
       console.log("Fetch orders error:", error)
       setError("Erro ao carregar ordens de serviço")
@@ -75,20 +102,21 @@ function ListServicesOrder(): JSX.Element {
     fetchOrders(filters)
   }
 
-  // Group orders by voyage
+  // Group orders by voyage (defensive: ensure `orders` is an array)
   const groupOrdersByVoyage = (orders: any[]) => {
+    if (!Array.isArray(orders)) return {}
     const grouped = orders.reduce((acc, order) => {
-      const voyageName = order.voyage?.name || "Sem Viagem"
+      const voyageName = order?.voyage?.name || "Sem Viagem"
       if (!acc[voyageName]) {
         acc[voyageName] = []
       }
       acc[voyageName].push(order)
       return acc
-    }, {})
+    }, {} as Record<string, any[]>)
     return grouped
   }
 
-  const groupedOrders = groupOrdersByVoyage(orders)
+  const groupedOrders = groupOrdersByVoyage(Array.isArray(orders) ? orders : [])
   const groupedArray = Object.entries(groupedOrders).map(([voyageName, orders]) => ({
     voyageName,
     orders: orders as any[]
@@ -116,7 +144,7 @@ function ListServicesOrder(): JSX.Element {
               Verifique sua conexão e tente novamente
             </Text>
           </View>
-        ) : orders.length === 0 ? (
+        ) : (!Array.isArray(orders) || orders.length === 0) ? (
           <View
             style={{
               flex: 1,

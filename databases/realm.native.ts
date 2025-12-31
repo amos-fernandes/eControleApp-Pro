@@ -38,69 +38,100 @@ export const getRealm = async () => {
   } catch (err: any) {
     console.warn("Realm runtime load failed (native binary missing). Using in-memory stub.", err)
 
-    // Provide a minimal stub that implements the methods the app expects
-    // This avoids crashes on devices where the native Realm binary wasn't included.
-    const stubRealm = {
-      _isStub: true,
-      objects: (name: string) => {
-        if (name === "Credentials") {
-          return [
-            {
-              accessToken: null,
-              client: null,
-              uid: null,
-              _id: "stub",
-            },
-          ]
-        }
-        return []
-      },
-      write: (fn: Function) => {
-        try {
-          fn && fn()
-        } catch (e) {
+    // In-memory stub with minimal create/delete/objects behavior so
+    // credentials written by `saveCredentials` are available for subsequent calls.
+    const createInMemoryRealm = () => {
+      const store: Record<string, any[]> = {}
+
+      return {
+        _isStub: true,
+        objects: (name: string) => {
+          store[name] = store[name] || []
+          // Return a shallow copy to mimic Realm's live results
+          return store[name].slice()
+        },
+        delete: (objs: any[] | any) => {
+          if (!objs) return
+          // If passed an array of objects, remove by _id from all collections
+          if (Array.isArray(objs) && objs.length > 0) {
+            const ids = objs.map((o: any) => o && o._id).filter(Boolean)
+            if (ids.length === 0) return
+            Object.keys(store).forEach((k) => {
+              store[k] = store[k].filter((item) => !ids.includes(item._id))
+            })
+            return
+          }
+          // If passed a single object with _id, remove it
+          if (objs && objs._id) {
+            Object.keys(store).forEach((k) => {
+              store[k] = store[k].filter((item) => item._id !== objs._id)
+            })
+          }
+        },
+        create: (name: string, obj: any) => {
+          store[name] = store[name] || []
+          store[name].push(obj)
+        },
+        write: (fn: Function) => {
+          try {
+            fn && fn()
+          } catch (e) {
+            /* noop */
+          }
+        },
+        close: () => {
           /* noop */
-        }
-      },
-      close: () => {
-        /* noop */
-      },
+        },
+      }
     }
 
-    return stubRealm
+    return createInMemoryRealm()
   }
 
   // If Realm object doesn't provide `open`, fall back to stub
   if (!Realm || typeof Realm.open !== "function") {
-    console.warn("Realm loaded but does not expose open(); using stub instead.")
-    const stubRealm = {
-      _isStub: true,
-      objects: (name: string) => {
-        if (name === "Credentials") {
-          return [
-            {
-              accessToken: null,
-              client: null,
-              uid: null,
-              _id: "stub",
-            },
-          ]
-        }
-        return []
-      },
-      write: (fn: Function) => {
-        try {
-          fn && fn()
-        } catch (e) {
-          /* noop */
-        }
-      },
-      close: () => {
-        /* noop */
-      },
+    console.warn("Realm loaded but does not expose open(); using in-memory stub instead.")
+    const createInMemoryRealm = () => {
+      const store: Record<string, any[]> = {}
+
+      return {
+        _isStub: true,
+        objects: (name: string) => {
+          store[name] = store[name] || []
+          return store[name].slice()
+        },
+        delete: (objs: any[] | any) => {
+          if (!objs) return
+          if (Array.isArray(objs) && objs.length > 0) {
+            const ids = objs.map((o: any) => o && o._id).filter(Boolean)
+            if (ids.length === 0) return
+            Object.keys(store).forEach((k) => {
+              store[k] = store[k].filter((item) => !ids.includes(item._id))
+            })
+            return
+          }
+          if (objs && objs._id) {
+            Object.keys(store).forEach((k) => {
+              store[k] = store[k].filter((item) => item._id !== objs._id)
+            })
+          }
+        },
+        create: (name: string, obj: any) => {
+          store[name] = store[name] || []
+          store[name].push(obj)
+        },
+        write: (fn: Function) => {
+          try {
+            fn && fn()
+          } catch (e) {
+            /* noop */
+          }
+        },
+        close: () => {},
+      }
     }
 
-    return stubRealm
+    return createInMemoryRealm()
   }
 
   return await Realm.open({

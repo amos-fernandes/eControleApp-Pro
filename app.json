@@ -11,6 +11,11 @@
     "scheme": "com.amosfernandes.econtrole",
     "android": {
       "package": "com.amosfernandes.econtrole"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "13225def-48b3-4f7f-93a5-04bd1d720b18"
+      }
     }
   }
 }

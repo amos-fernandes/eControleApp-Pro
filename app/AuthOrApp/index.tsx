@@ -1,26 +1,52 @@
 import { useEffect, useState } from "react"
 
-import { retrieveUserSession } from "../../services/retrieveUserSession"
+import { retrieveUserSession, retrieveDomain } from "../../services/retrieveUserSession"
+import { GetDataFromSecureStore } from "@/utils/SecureStore"
 import Authentication from "../Authentication"
 import ListServicesOrder from "../ListServicesOrder"
+import { getRealm } from "@/databases/realm"
 
 function AuthOrApp() {
-  const [user, setUser]: any = useState({})
+  const [ready, setReady] = useState(false)
+  const [authenticated, setAuthenticated] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
-      const data = await retrieveUserSession()
-      setUser(data)
+      try {
+        const user = await retrieveUserSession()
+        const domain = await retrieveDomain()
+        const userObj = user && (user.data ? user.data : user)
+
+        // Require user_session (having an email) and domain to be valid and have credentials stored in Realm
+        // Additionally require an explicit `auto_login` flag in SecureStore to allow automatic login.
+        const allowAuto = (await GetDataFromSecureStore("auto_login")) === "true"
+        if (userObj && userObj.email && domain && domain.status === 200 && allowAuto) {
+          try {
+            const realm = await getRealm()
+            if (realm && typeof realm.objects === "function") {
+              const creds: any = realm.objects("Credentials")?.[0]
+              if (creds && creds.accessToken) {
+                setAuthenticated(true)
+              }
+            }
+          } catch (e) {
+            // realm unavailable or no credentials persisted — treat as not authenticated
+            setAuthenticated(false)
+          }
+        }
+      } catch (e) {
+        // ignore and fall back to unauthenticated
+      } finally {
+        setReady(true)
+      }
     }
 
     fetchData()
   }, [])
 
-  if (!user.email) {
-    return <Authentication />
-  }
+  if (!ready) return null
 
-  return <ListServicesOrder />
+  return authenticated ? <ListServicesOrder /> : <Authentication />
 }
 
 export default AuthOrApp

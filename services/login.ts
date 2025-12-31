@@ -6,6 +6,9 @@ import { retrieveDomain } from "./retrieveUserSession"
 const login = async (email: string, password: string) => {
   try {
     const URL = await retrieveDomain()
+    if (!URL || URL.status !== 200 || !URL.data) {
+      throw new Error("INVALID_DOMAIN")
+    }
     if (email && password) {
       const response: any = await api
         .post(`${URL.data}/auth/sign_in`, {
@@ -29,6 +32,7 @@ const login = async (email: string, password: string) => {
     }
   } catch (error) {
     console.log("login: ", error)
+    console.log("login error response data:", (error as any).response?.data)
     throw error
   }
 }

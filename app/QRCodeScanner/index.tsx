@@ -45,15 +45,84 @@ function QRCode(): JSX.Element {
       // Normaliza: remove espaços e quebras
       extracted = extracted.trim()
 
-      // Salva como objeto esperado por retrieveDomain
-      await SaveDataToSecureStore("domain", JSON.stringify({ domain: extracted }))
+      // Se for uma URL completa, extraia origin e possível redirect_url
+      try {
+        const u = new URL(extracted)
 
-      const session = await retrieveDomain()
-      console.log("handleBarCodeScanned: ", session)
-
-      if (session && session.status === 200) {
-        navigation.navigate("Login")
+        // If the scanned URL is already the target host, save immediately
+        if (u.hostname.includes("econtrole.com")) {
+          const origin = u.origin
+          await SaveDataToSecureStore("domain", JSON.stringify({ domain: origin }))
+          const redirectParam = u.searchParams.get("redirect_url")
+          if (redirectParam) {
+            const decoded = decodeURIComponent(redirectParam)
+            await SaveDataToSecureStore("redirect_path", decoded)
+          }
+        } else {
+          // For known wrapper/shortener hosts, attempt to resolve synchronously with timeout
+          const wrapperRegex = /qr-code-generator|qrco\.de|bit\.ly|tinyurl|support\.qr-code-generator|go\.qr-code-generator/gi
+          if (wrapperRegex.test(u.hostname)) {
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 2500)
+            try {
+              const resp = await fetch(extracted, { method: "GET", redirect: "follow", signal: (controller as any).signal })
+              clearTimeout(timeout)
+              const final = resp.url || extracted
+              if (final && final.includes("econtrole.com")) {
+                const fu = new URL(final)
+                const finalOrigin = fu.origin
+                await SaveDataToSecureStore("domain", JSON.stringify({ domain: finalOrigin }))
+                const redirectParam2 = fu.searchParams.get("redirect_url")
+                if (redirectParam2) {
+                  await SaveDataToSecureStore("redirect_path", decodeURIComponent(redirectParam2))
+                }
+                console.log("QRCode resolution: updated domain to final origin", finalOrigin)
+              } else {
+                // If redirect didn't expose final host, try to inspect HTML for the final link
+                try {
+                  const text = await resp.text()
+                  const m = text.match(/https?:\/\/(?:[\w.-]*\.)?econtrole\.com[\S]*/i)
+                  if (m && m[0]) {
+                    try {
+                      const fu2 = new URL(m[0])
+                      const finalOrigin2 = fu2.origin
+                      await SaveDataToSecureStore("domain", JSON.stringify({ domain: finalOrigin2 }))
+                      const redirectParam3 = fu2.searchParams.get("redirect_url")
+                      if (redirectParam3) await SaveDataToSecureStore("redirect_path", decodeURIComponent(redirectParam3))
+                      console.log("QRCode resolution: extracted econtrole link from HTML and saved", finalOrigin2)
+                    } catch (e) {
+                      await SaveDataToSecureStore("domain", JSON.stringify({ domain: extracted }))
+                    }
+                  } else {
+                    await SaveDataToSecureStore("domain", JSON.stringify({ domain: extracted }))
+                  }
+                } catch (e) {
+                  await SaveDataToSecureStore("domain", JSON.stringify({ domain: extracted }))
+                }
+              }
+            } catch (e) {
+              clearTimeout(timeout)
+              // resolving failed (cloudflare/challenge) — fallback to saving scanned origin
+              await SaveDataToSecureStore("domain", JSON.stringify({ domain: u.origin }))
+            }
+          } else {
+            // Non-wrapper host: save origin as-is
+            await SaveDataToSecureStore("domain", JSON.stringify({ domain: u.origin }))
+            const redirectParam = u.searchParams.get("redirect_url")
+            if (redirectParam) {
+              const decoded = decodeURIComponent(redirectParam)
+              await SaveDataToSecureStore("redirect_path", decoded)
+            }
+          }
+        }
+      } catch (err) {
+        // Não é uma URL completa — mantenha comportamento anterior
+        await SaveDataToSecureStore("domain", JSON.stringify({ domain: extracted }))
       }
+
+      // Após salvar domínio/redirect, navegue para a tela de Login
+      console.log("handleBarCodeScanned: domain saved")
+      navigation.navigate("Login")
     } catch (err) {
       console.log("QRCode handling error:", err)
       setScanned(false)

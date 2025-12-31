@@ -34,16 +34,32 @@ export const retrieveDomain = async (): Promise<ResponseInterface> => {
 
     // Se for uma URL completa
     if (domain.startsWith("http://") || domain.startsWith("https://")) {
-      // Normalizacao: remove /login se o usuario escaneou a pagina de login
-      domain = domain.replace(/\/login\/?$/, "")
-      // Remove barra final se existir
-      domain = domain.replace(/\/$/, "")
+      try {
+        // Tenta seguir redirecionamentos (por exemplo short URLs como qrco.de)
+        // usando fetch para obter a URL final, quando possível.
+        const resp = await fetch(domain, { method: 'GET' })
+        const finalUrl = resp.url || domain
 
-      if (!domain.endsWith("/api")) {
-        domain = domain + "/api"
+        // Normalizacao: remove /login se o usuario escaneou a pagina de login
+        let normalized = finalUrl.replace(/\/login\/?$/, "")
+        // Remove barra final se existir
+        normalized = normalized.replace(/\/$/, "")
+
+        if (!normalized.endsWith("/api")) {
+          normalized = normalized + "/api"
+        }
+
+        return { status: 200, data: normalized }
+      } catch (err) {
+        // Se seguir redirects falhar (ex: cloudflare challenge), caia para a
+        // normalizacao simples da URL lida do QR.
+        domain = domain.replace(/\/login\/?$/, "")
+        domain = domain.replace(/\/$/, "")
+        if (!domain.endsWith("/api")) {
+          domain = domain + "/api"
+        }
+        return { status: 200, data: domain }
       }
-
-      return { status: 200, data: domain }
     }
 
     // Caso seja apenas o subdominio

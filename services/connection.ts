@@ -5,25 +5,6 @@ import { getRealm } from "../databases/realm"
 import { headersTypes } from "../enums/headersTypes"
 import { HeadersTypes } from "../interfaces/HeadersTypes"
 
-
-
-function transformResponse(data: any, header: any) {
-  const contentType = header[headersTypes.contentTypeHeader]
-  if (contentType && contentType.match(/application\/json/i)) {
-    const { accessToken, tokenType, uid, client } = headersTypes
-    const formatedData: HeadersTypes = {
-      accessToken: header[accessToken],
-      tokenType: header[tokenType],
-      uid: header[uid],
-      client: header[client],
-    }
-
-    saveCredentials(formatedData)
-    return data
-  }
-  return data
-}
-
 async function saveCredentials(data: HeadersTypes) {
   console.log("Saving credentials to Realm:", data)
   const realm = await getRealm()
@@ -48,9 +29,10 @@ async function saveCredentials(data: HeadersTypes) {
 }
 
 const axiosEControleConfig = {
-  transformResponse: transformResponse,
   timeout: 30000,
-  baseURL: "https://testeaplicativo.econtrole.com/api",
+  // Do not set a global baseURL here. The app constructs full URLs at call sites
+  // using the domain saved by scanning the QR (retrieveDomain()). Leaving a
+  // hardcoded baseURL caused requests to go to the wrong host on some devices.
 }
 
 const api = axios.create(axiosEControleConfig)
@@ -91,12 +73,44 @@ api.interceptors.response.use(
     console.log("Status:", response.status)
     console.log("URL:", response.config.url)
     console.log("-----------------------------")
+
+    try {
+      const h: any = response.headers || {}
+      const accessToken = h[headersTypes.accessToken]
+      const client = h[headersTypes.client]
+      const uid = h[headersTypes.uid]
+      const tokenType = h[headersTypes.tokenType]
+
+      // Only persist credentials when this response is from the login endpoint
+      const reqUrl = (response.config && response.config.url) ? String(response.config.url) : ""
+      const reqMethod = (response.config && response.config.method) ? String(response.config.method).toLowerCase() : ""
+      const isAuthResponse = reqUrl.includes("/auth/sign_in") || (reqMethod === "post" && reqUrl.includes("/auth"))
+
+      if (isAuthResponse && accessToken && client && uid) {
+        saveCredentials({ accessToken, client, uid, tokenType })
+        console.log("Saved credentials from response headers (auth response)")
+      } else if (accessToken && client && uid) {
+        console.log("Auth headers present but not saved (non-auth response):", reqMethod, reqUrl)
+      }
+      // Debug: log which auth headers are present (if any)
+      try {
+        const present = Object.keys(h).filter((k) => [headersTypes.accessToken, headersTypes.client, headersTypes.uid].includes(k))
+        console.log('Response headers keys present for auth:', present)
+      } catch (e) {
+        // ignore
+      }
+    } catch (err) {
+      console.log("response interceptor saveCredentials error:", err)
+    }
+
     return response
   },
   (error) => {
     console.log("RESPONSE ERROR")
     console.log("Message:", error.message)
     console.log("Status:", error.response?.status)
+    console.log("Response data:", error.response?.data)
+    console.log("Response headers:", error.response?.headers)
     console.log("URL:", error.config?.url)
     console.log("-----------------------------")
     return Promise.reject(error)
