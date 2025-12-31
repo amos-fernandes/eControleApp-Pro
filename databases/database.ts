@@ -1,0 +1,158 @@
+import { openDatabaseSync } from 'expo-sqlite'
+
+let _db: any = null
+const getDB = () => {
+    if (!_db) {
+        _db = openDatabaseSync('econtrole.db')
+    }
+    return _db
+}
+
+/**
+ * Inicializa o esquema de tabelas do banco de dados SQLite.
+ */
+export const initDatabase = () => {
+    const db = getDB()
+    db.execSync(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+
+    CREATE TABLE IF NOT EXISTS credentials (
+      _id TEXT PRIMARY KEY NOT NULL,
+      accessToken TEXT,
+      uid TEXT,
+      client TEXT,
+      created_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      _id TEXT PRIMARY KEY NOT NULL,
+      email TEXT,
+      name TEXT,
+      created_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS service_orders (
+      id INTEGER PRIMARY KEY NOT NULL,
+      identifier TEXT,
+      status TEXT,
+      service_date TEXT,
+      customer_id INTEGER,
+      customer_name TEXT,
+      address_text TEXT,
+      observations TEXT,
+      driver_observations TEXT,
+      created_at TEXT,
+      vehicle_info TEXT,
+      voyage_info TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS service_executions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      service_order_id INTEGER,
+      service_name TEXT,
+      amount INTEGER,
+      unit_name TEXT,
+      item_weights TEXT,
+      FOREIGN KEY(service_order_id) REFERENCES service_orders(id)
+    );
+  `)
+}
+
+/**
+ * Insere ou atualiza as credenciais de autenticacao.
+ */
+export const insertCredentials = (cred: any) => {
+    const db = getDB()
+    db.runSync(
+        'INSERT OR REPLACE INTO credentials (_id, accessToken, uid, client, created_at) VALUES (?, ?, ?, ?, ?)',
+        [cred._id || 'main', cred.accessToken, cred.uid, cred.client, new Date().toISOString()],
+    )
+}
+
+/**
+ * Insere ou atualiza os dados do usuario.
+ */
+export const insertUser = (user: any) => {
+    const db = getDB()
+    db.runSync('INSERT OR REPLACE INTO users (_id, email, name, created_at) VALUES (?, ?, ?, ?)', [
+        user._id,
+        user.email,
+        user.name,
+        new Date().toISOString(),
+    ])
+}
+
+/**
+ * Realiza a insercao de uma Ordem de Servico de forma atomica.
+ */
+export const insertServiceOrder = (order: any) => {
+    const db = getDB()
+    db.withTransactionSync(() => {
+        db.runSync(
+            `INSERT OR REPLACE INTO service_orders (
+        id, identifier, status, service_date, customer_id, customer_name, 
+        address_text, observations, driver_observations, created_at, vehicle_info, voyage_info
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                order.id,
+                order.identifier,
+                order.status,
+                order.service_date,
+                order.customer_id,
+                order.customer?.name,
+                order.address?.to_s || order.address?.name,
+                order.observations,
+                order.driver_observations,
+                order.created_at,
+                order.vehicle ? JSON.stringify(order.vehicle) : null,
+                order.voyage ? JSON.stringify(order.voyage) : null,
+            ],
+        )
+
+        db.runSync('DELETE FROM service_executions WHERE service_order_id = ?', [order.id])
+
+        if (Array.isArray(order.service_executions)) {
+            order.service_executions.forEach((exec: any) => {
+                db.runSync(
+                    `INSERT INTO service_executions (
+            service_order_id, service_name, amount, unit_name, item_weights
+          ) VALUES (?, ?, ?, ?, ?)`,
+                    [
+                        order.id,
+                        exec.service?.name,
+                        exec.amount,
+                        exec.unit?.name,
+                        exec.service_item_weights ? JSON.stringify(exec.service_item_weights) : null,
+                    ],
+                )
+            })
+        }
+    })
+}
+
+/**
+ * Retorna todas as Ordens de Servico armazenadas localmente.
+ */
+export const getServiceOrders = () => {
+    const db = getDB()
+    return db.getAllSync('SELECT * FROM service_orders')
+}
+
+/**
+ * Obtem a credencial ativa.
+ */
+export const getCredentials = () => {
+    const db = getDB()
+    return db.getFirstSync('SELECT * FROM credentials LIMIT 1')
+}
+
+/**
+ * Limpa todos os dados locais.
+ */
+export const clearDatabase = () => {
+    const db = getDB()
+    db.execSync(
+        'DELETE FROM service_orders; DELETE FROM service_executions; DELETE FROM credentials; DELETE FROM users;',
+    )
+}

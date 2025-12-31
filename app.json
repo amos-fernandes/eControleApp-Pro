@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "econtrole",
+    "slug": "econtrole",
+    "version": "1.0.0",
+    "sdkVersion": "51.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "scheme": "com.amosfernandes.econtrole",
+    "android": {
+      "package": "com.amosfernandes.econtrole"
+    }
+  }
+}
