@@ -40,9 +40,36 @@ function Routes(): JSX.Element {
     setLoading(true)
     setError(null)
     try {
-      const response = await getServicesOrders({ filters })
-      if (response?.data) {
-        const groupedTrips = groupOrdersByTripsAndRoutes(response.data)
+      const response: any = await getServicesOrders({ filters })
+      console.log("fetchTrips response shape:", response && Object.keys(response))
+      if (response && response.data) {
+        try {
+          console.log("fetchTrips response.data shape:", Object.keys(response.data))
+        } catch (e) {
+          console.log("fetchTrips response.data (non-object)")
+        }
+      }
+      // Normalize response shapes (axios response, wrapped data, etc.)
+      let ordersData: any[] = []
+      if (!response) {
+        ordersData = []
+      } else if (Array.isArray(response.data)) {
+        ordersData = response.data
+      } else if (response.data && Array.isArray(response.data.data)) {
+        ordersData = response.data.data
+      } else if (response.data && Array.isArray(response.data.items)) {
+        ordersData = response.data.items
+      } else if (response.data && Array.isArray(response.data.service_orders)) {
+        ordersData = response.data.service_orders
+      } else if (Array.isArray(response)) {
+        ordersData = response
+      } else {
+        const maybeArray = Object.values(response).find((v: any) => Array.isArray(v))
+        ordersData = Array.isArray(maybeArray) ? maybeArray : []
+      }
+
+      if (Array.isArray(ordersData) && ordersData.length > 0) {
+        const groupedTrips = groupOrdersByTripsAndRoutes(ordersData)
         setTrips(groupedTrips)
       } else {
         setTrips([])
@@ -84,6 +111,11 @@ function Routes(): JSX.Element {
 
   // Enhanced grouping logic for trips and routes
   const groupOrdersByTripsAndRoutes = (orders: any[]): TripGroup[] => {
+    if (!Array.isArray(orders)) {
+      console.log('groupOrdersByTripsAndRoutes received non-array orders:', orders)
+      return []
+    }
+
     const tripGroups: { [key: string]: any[] } = {}
 
     orders.forEach(order => {
@@ -122,6 +154,7 @@ function Routes(): JSX.Element {
   }
 
   const calculateTotalDistance = (orders: any[]): string => {
+    if (!Array.isArray(orders) || orders.length === 0) return "Não calculado"
     const totalDistance = orders.reduce((sum, order) => {
       return sum + (parseFloat(order.estimatedDistance) || 0)
     }, 0)
@@ -129,6 +162,7 @@ function Routes(): JSX.Element {
   }
 
   const calculateCompletionRate = (orders: any[]): number => {
+    if (!Array.isArray(orders) || orders.length === 0) return 0
     const completedOrders = orders.filter(order => order.status === 'completed').length
     return Math.round((completedOrders / orders.length) * 100)
   }

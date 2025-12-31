@@ -52,6 +52,9 @@ function ListServicesOrder(): JSX.Element {
         ordersData = []
       } else if (Array.isArray(response.data)) {
         ordersData = response.data
+      } else if (response.data && Array.isArray(response.data.items)) {
+        console.log('fetchOrders response.data.items length:', response.data.items.length)
+        ordersData = response.data.items
       } else if (response.data && Array.isArray(response.data.data)) {
         ordersData = response.data.data
       } else if (response.data && Array.isArray(response.data.service_orders)) {
@@ -64,6 +67,10 @@ function ListServicesOrder(): JSX.Element {
         ordersData = Array.isArray(maybeArray) ? maybeArray : []
       }
 
+      console.log('Resolved orders count:', Array.isArray(ordersData) ? ordersData.length : 0)
+      if (Array.isArray(ordersData) && ordersData.length > 0) {
+        console.log('First order sample:', ordersData[0])
+      }
       setOrders(ordersData)
     } catch (error: any) {
       console.log("Fetch orders error:", error)
@@ -106,7 +113,15 @@ function ListServicesOrder(): JSX.Element {
   const groupOrdersByVoyage = (orders: any[]) => {
     if (!Array.isArray(orders)) return {}
     const grouped = orders.reduce((acc, order) => {
-      const voyageName = order?.voyage?.name || "Sem Viagem"
+      const voyageName =
+        order?.voyage?.name ||
+        order?.voyage_name ||
+        order?.voyageName ||
+        (order?.voyage && typeof order.voyage === 'string' ? order.voyage : null) ||
+        order?.voyage_id ||
+        order?.route_name ||
+        order?.identifier ||
+        "Sem Viagem"
       if (!acc[voyageName]) {
         acc[voyageName] = []
       }
