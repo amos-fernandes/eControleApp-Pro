@@ -1,4 +1,5 @@
 import { GetDataFromSecureStore } from "@/utils/SecureStore"
+import { Platform } from 'react-native'
 
 import { ResponseInterface } from "../interfaces/Response"
 import decoded from "../utils/decoded"
@@ -17,11 +18,17 @@ export const retrieveUserSession = async (): Promise<ResponseInterface> => {
 }
 
 export const retrieveDomain = async (): Promise<ResponseInterface> => {
+  // For web development, use proxy to avoid CORS issues
+  if (Platform.OS === 'web') {
+    return { status: 200, data: '' }
+  }
+
   try {
     const session: any = await GetDataFromSecureStore("domain")
     if (!session) return { status: 404 }
 
-    const parsedSession = JSON.parse(session)
+    // `GetDataFromSecureStore` may return a parsed object on web or a JSON string on native.
+    const parsedSession = typeof session === 'string' ? JSON.parse(session) : session
     let domain = parsedSession.domain
 
     if (!domain) return { status: 404 }
@@ -40,16 +47,26 @@ export const retrieveDomain = async (): Promise<ResponseInterface> => {
         const resp = await fetch(domain, { method: 'GET' })
         const finalUrl = resp.url || domain
 
-        // Normalizacao: remove /login se o usuario escaneou a pagina de login
-        let normalized = finalUrl.replace(/\/login\/?$/, "")
-        // Remove barra final se existir
-        normalized = normalized.replace(/\/$/, "")
-
-        if (!normalized.endsWith("/api")) {
-          normalized = normalized + "/api"
+        // Use URL parsing to remove query strings and normalize path
+        try {
+          const parsed = new URL(finalUrl)
+          // If path ends with /login, remove it; otherwise remove any trailing /login-like path
+          let pathname = parsed.pathname.replace(/\/login\/?$/, "")
+          if (!pathname) pathname = ''
+          let normalized = `${parsed.protocol}//${parsed.hostname}${parsed.port ? ':' + parsed.port : ''}${pathname}`
+          normalized = normalized.replace(/\/$/, "")
+          if (!normalized.endsWith("/api")) {
+            normalized = normalized + "/api"
+          }
+          return { status: 200, data: normalized }
+        } catch (e) {
+          // fallback: strip querystring and /login naively
+          let simple = finalUrl.split('?')[0]
+          simple = simple.replace(/\/login\/?$/, "")
+          simple = simple.replace(/\/$/, "")
+          if (!simple.endsWith("/api")) simple = simple + "/api"
+          return { status: 200, data: simple }
         }
-
-        return { status: 200, data: normalized }
       } catch (err) {
         // Se seguir redirects falhar (ex: cloudflare challenge), caia para a
         // normalizacao simples da URL lida do QR.

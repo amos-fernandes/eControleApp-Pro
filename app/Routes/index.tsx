@@ -12,7 +12,16 @@ import {
 import { useFocusEffect, useRoute } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { WithLocalSvg } from "react-native-svg/css"
+import { Platform } from "react-native"
+
+let WithLocalSvg: any = null
+if (Platform.OS !== 'web') {
+  try {
+    WithLocalSvg = require('react-native-svg/css').WithLocalSvg
+  } catch (e) {
+    WithLocalSvg = null
+  }
+}
 
 import { useFilterServiceOrderStore } from "@/stores/useFilterServiceOrder"
 import { getServicesOrders } from "@/services/servicesOrders"
@@ -21,16 +30,22 @@ import BottomNavigation from "../../components/BottomNavigation"
 
 const isRoutesScreen = (route: any) => route.name === "Routes"
 
-interface TripGroup {
+interface VoyageGroup {
   tripName: string
   orders: any[]
   collectionPoints: number
   totalDistance?: string
+  completionRate?: number
+}
+
+interface RouteGroup {
+  routeName: string
+  voyages: VoyageGroup[]
 }
 
 function Routes(): JSX.Element {
   const navigation = useNavigation()
-  const [trips, setTrips] = useState<TripGroup[]>([])
+  const [trips, setTrips] = useState<RouteGroup[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -69,8 +84,8 @@ function Routes(): JSX.Element {
       }
 
       if (Array.isArray(ordersData) && ordersData.length > 0) {
-        const groupedTrips = groupOrdersByTripsAndRoutes(ordersData)
-        setTrips(groupedTrips)
+        const groupedByRoute = groupOrdersByRouteAndTrips(ordersData)
+        setTrips(groupedByRoute as any)
       } else {
         setTrips([])
       }
@@ -109,48 +124,50 @@ function Routes(): JSX.Element {
     fetchTrips(filters)
   }
 
-  // Enhanced grouping logic for trips and routes
-  const groupOrdersByTripsAndRoutes = (orders: any[]): TripGroup[] => {
+  // Group first by route (collection route / route.name) then by trip/voyage
+  const groupOrdersByRouteAndTrips = (orders: any[]): RouteGroup[] => {
     if (!Array.isArray(orders)) {
-      console.log('groupOrdersByTripsAndRoutes received non-array orders:', orders)
+      console.log('groupOrdersByRouteAndTrips received non-array orders:', orders)
       return []
     }
 
-    const tripGroups: { [key: string]: any[] } = {}
+    const routeMap: { [key: string]: any[] } = {}
 
     orders.forEach(order => {
-      // Try to get trip/voyage name
-      const tripName = order.voyage?.name || "Viagens sem Agrupamento"
-      
-      if (!tripGroups[tripName]) {
-        tripGroups[tripName] = []
-      }
-      
-      // Add collection route information if available
+      const routeName = order.collection_route || order.route?.name || 'Rota não definida'
       const enhancedOrder = {
         ...order,
-        collectionRoute: order.collection_route || order.route?.name || "Rota não definida",
         hasCollectionPoints: !!(order.address?.latitude && order.address?.longitude),
         estimatedDistance: order.estimated_distance || null,
-        serviceTime: order.estimated_service_time || null
       }
-      
-      tripGroups[tripName].push(enhancedOrder)
+      if (!routeMap[routeName]) routeMap[routeName] = []
+      routeMap[routeName].push(enhancedOrder)
     })
 
-    // Convert to TripGroup format with additional metrics
-    return Object.entries(tripGroups).map(([tripName, orders]) => {
-      const collectionPoints = orders.filter(order => order.hasCollectionPoints).length
-      const totalOrders = orders.length
-      
-      return {
-        tripName,
-        orders,
-        collectionPoints,
-        totalDistance: calculateTotalDistance(orders),
-        completionRate: calculateCompletionRate(orders)
-      }
-    }).sort((a, b) => b.orders.length - a.orders.length) // Sort by number of orders
+    // For each route, group orders by voyage/trip
+    const routeGroups: RouteGroup[] = Object.entries(routeMap).map(([routeName, ordersForRoute]) => {
+      const tripMap: { [key: string]: any[] } = {}
+      ordersForRoute.forEach(o => {
+        const tripName = o.voyage?.name || 'Sem Viagem'
+        if (!tripMap[tripName]) tripMap[tripName] = []
+        tripMap[tripName].push(o)
+      })
+
+      const voyages: VoyageGroup[] = Object.entries(tripMap).map(([tripName, voyageOrders]) => {
+        const collectionPoints = voyageOrders.filter((order: any) => order.hasCollectionPoints).length
+        return {
+          tripName,
+          orders: voyageOrders,
+          collectionPoints,
+          totalDistance: calculateTotalDistance(voyageOrders),
+          completionRate: calculateCompletionRate(voyageOrders),
+        }
+      }).sort((a, b) => b.orders.length - a.orders.length)
+
+      return { routeName, voyages }
+    })
+
+    return routeGroups
   }
 
   const calculateTotalDistance = (orders: any[]): string => {
@@ -167,126 +184,46 @@ function Routes(): JSX.Element {
     return Math.round((completedOrders / orders.length) * 100)
   }
 
-  const renderTripItem = ({ item }: { item: TripGroup }) => (
+  // Render a route box containing voyages
+  const renderRouteItem = ({ item }: { item: RouteGroup }) => (
     <View style={{ width: "100%", marginBottom: 20 }}>
-      {/* Trip Header */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: "#007AFF",
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 8,
-        }}
-        onPress={() => {}}
-        activeOpacity={1}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff", marginBottom: 4 }}>
-              {item.tripName}
-            </Text>
-            <Text style={{ fontSize: 14, color: "#E3F2FD" }}>
-              {item.orders.length} ordens de serviço
-            </Text>
-          </View>
-          <View style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            borderRadius: 20,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-          }}>
-            <Text style={{ fontSize: 12, color: "#fff", fontWeight: "bold" }}>
-              {item.collectionPoints} pontos
-            </Text>
-          </View>
-        </View>
+      <View style={{ backgroundColor: "#0057b8", borderRadius: 12, padding: 12, marginBottom: 10 }}>
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#fff" }}>{item.routeName}</Text>
+      </View>
 
-        {/* Trip Metrics */}
-        <View style={{ flexDirection: "row", marginTop: 12, justifyContent: "space-between" }}>
-          <View style={{ alignItems: "center" }}>
-            <WithLocalSvg
-              width={20}
-              height={20}
-              asset={require("../../assets/images/icons/delivery-truck-silhouette.svg")}
-            />
-            <Text style={{ fontSize: 12, color: "#fff", marginTop: 2 }}>
-              {item.totalDistance}
-            </Text>
-          </View>
-          <View style={{ alignItems: "center" }}>
-            <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>
-              {item.completionRate}%
-            </Text>
-            <Text style={{ fontSize: 12, color: "#E3F2FD" }}>
-              Concluído
-            </Text>
-          </View>
-          <View style={{ alignItems: "center" }}>
-            <WithLocalSvg
-              width={20}
-              height={20}
-              asset={require("../../assets/images/icons/factory.svg")}
-            />
-            <Text style={{ fontSize: 12, color: "#fff", marginTop: 2 }}>
-              {item.orders.filter(o => o.customer).length} clientes
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      {/* Orders List */}
-      <View style={{ paddingLeft: 16 }}>
-        {item.orders.slice(0, 3).map((order, index) => (
-          <View
-            key={order.id || index}
-            style={{
-              backgroundColor: "#f8f9fa",
-              borderRadius: 8,
-              padding: 12,
-              marginBottom: 8,
-              borderLeftWidth: 4,
-              borderLeftColor: order.hasCollectionPoints ? "#28a745" : "#ffc107",
-            }}
-          >
+      {/* For each voyage under the route render a compact trip card */}
+      {item.voyages.map((voyage) => (
+        <View key={voyage.tripName} style={{ marginBottom: 12 }}>
+          <View style={{ backgroundColor: "#007AFF", borderRadius: 10, padding: 12, marginBottom: 8 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <Text style={{ fontSize: 14, fontWeight: "bold", color: "#333" }}>
-                #{order.identifier || `OS-${order.id}`}
-              </Text>
-              <View style={{
-                backgroundColor: order.status === 'completed' ? "#28a745" : "#007bff",
-                borderRadius: 12,
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-              }}>
-                <Text style={{ fontSize: 10, color: "#fff", fontWeight: "bold" }}>
-                  {order.status === 'completed' ? 'CONCLUÍDA' : 'PENDENTE'}
-                </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff" }}>{voyage.tripName}</Text>
+                <Text style={{ fontSize: 12, color: "#E3F2FD" }}>{voyage.orders.length} ordens</Text>
+              </View>
+              <View style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6 }}>
+                <Text style={{ fontSize: 12, color: "#fff", fontWeight: "bold" }}>{voyage.collectionPoints} pontos</Text>
               </View>
             </View>
-            
-            <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-              {order.customer?.name || "Cliente não informado"}
-            </Text>
-            
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-              <Text style={{ fontSize: 11, color: "#999" }}>
-                📍 {order.address?.to_s || "Endereço não informado"}
-              </Text>
-              {order.hasCollectionPoints && (
-                <Text style={{ fontSize: 11, color: "#28a745", fontWeight: "bold" }}>
-                  ✓ Com GPS
-                </Text>
-              )}
-            </View>
           </View>
-        ))}
-        
-        {item.orders.length > 3 && (
-          <Text style={{ fontSize: 12, color: "#007AFF", textAlign: "center", marginTop: 8 }}>
-            ... e mais {item.orders.length - 3} ordens
-          </Text>
-        )}
-      </View>
+
+          <View style={{ paddingLeft: 8 }}>
+            {voyage.orders.slice(0, 3).map((order, idx) => (
+              <View key={order.id || idx} style={{ backgroundColor: "#f8f9fa", borderRadius: 8, padding: 10, marginBottom: 8, borderLeftWidth: 4, borderLeftColor: order.hasCollectionPoints ? "#28a745" : "#ffc107" }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ fontSize: 14, fontWeight: "bold", color: "#333" }}>#{order.identifier || `OS-${order.id}`}</Text>
+                  <View style={{ backgroundColor: order.status === 'completed' ? "#28a745" : "#007bff", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 }}>
+                    <Text style={{ fontSize: 10, color: "#fff", fontWeight: "bold" }}>{order.status === 'completed' ? 'CONCLUÍDA' : 'PENDENTE'}</Text>
+                  </View>
+                </View>
+                <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>{order.customer?.name || "Cliente não informado"}</Text>
+                <Text style={{ fontSize: 11, color: "#999", marginTop: 6 }}>📍 {order.address?.to_s || "Endereço não informado"}</Text>
+              </View>
+            ))}
+
+            {voyage.orders.length > 3 && <Text style={{ fontSize: 12, color: "#007AFF", textAlign: "center", marginTop: 8 }}>... e mais {voyage.orders.length - 3} ordens</Text>}
+          </View>
+        </View>
+      ))}
     </View>
   )
 
@@ -324,11 +261,11 @@ function Routes(): JSX.Element {
               padding: 20,
             }}
           >
-            <WithLocalSvg
-              width={80}
-              height={80}
-              asset={require("../../assets/images/icons/delivery-truck-silhouette.svg")}
-            />
+            {WithLocalSvg ? (
+              <WithLocalSvg width={80} height={80} asset={require("../../assets/images/icons/delivery-truck-silhouette.svg")} />
+            ) : (
+              <Text style={{ fontSize: 48 }}>🚚</Text>
+            )}
             <Text style={{ fontSize: 18, color: "#666", textAlign: "center", marginTop: 16 }}>
               Nenhuma rota encontrada
             </Text>
@@ -339,12 +276,12 @@ function Routes(): JSX.Element {
         ) : (
           <FlatList
             data={trips}
-            keyExtractor={(item, index) => `${item.tripName}-${index}`}
+            keyExtractor={(item, index) => `${item.routeName}-${index}`}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl refreshing={loading} onRefresh={refreshTripsList} />
             }
-            renderItem={renderTripItem}
+            renderItem={renderRouteItem}
             contentContainerStyle={{ paddingBottom: 20 }}
           />
         )}

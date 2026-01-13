@@ -18,6 +18,7 @@ function Login(): JSX.Element {
   const [loading, setLoading] = React.useState(false)
 
   const submit = async () => {
+    console.log('Login submit clicked', { email, password })
     try {
       setLoading(true)
       const response: any = await login(email, password)

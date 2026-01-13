@@ -1,6 +1,6 @@
 import api from "./connection"
 import { retrieveDomain } from "./retrieveUserSession"
-import { getRealm } from "../databases/realm"
+import { getCredentials } from "../databases/database"
 
 interface FilterServiceOrderState {
   filters: {
@@ -11,17 +11,12 @@ interface FilterServiceOrderState {
     voyage: string
   }
 }
+
 export const getServicesOrders = async ({ filters }: FilterServiceOrderState) => {
-  const realm = await getRealm()
+  const credentials = await getCredentials()
   const URL = await retrieveDomain()
 
   try {
-    if (!realm || typeof realm.objects !== "function") {
-      console.warn("getServicesOrders: Realm not available (stub or missing)")
-      throw new Error("LOCAL_DB_UNAVAILABLE")
-    }
-
-    const credentials: any = realm.objects("Credentials")[0] || null
     if (!credentials || !credentials.accessToken) {
       console.warn("getServicesOrders: No credentials found in local DB")
       throw new Error("NO_CREDENTIALS")
@@ -48,41 +43,36 @@ export const getServicesOrders = async ({ filters }: FilterServiceOrderState) =>
     throw error
   }
 }
+
 export const getServiceOrder = async (id: string) => {
-  const realm = await getRealm()
+  const credentials = await getCredentials()
   const URL = await retrieveDomain()
   console.log("id de entrada", id)
 
   try {
-    if (!realm || typeof realm.objects !== "function") {
-      console.warn("getServiceOrder: Realm not available (stub or missing)")
-      throw new Error("LOCAL_DB_UNAVAILABLE")
-    }
-
-    const credentials: any = realm.objects("Credentials")[0] || null
     if (!credentials || !credentials.accessToken) {
       console.warn("getServiceOrder: No credentials found in local DB")
       throw new Error("NO_CREDENTIALS")
     }
 
-    const params = {
+    const headers = {
+      "Content-Type": "application/json",
       "access-token": credentials.accessToken,
-      "client": credentials.client,
-      "uid": credentials.uid,
+      client: credentials.client,
+      uid: credentials.uid,
     }
-    console.log("params", params)
-    console.log("URL", URL)
-    console.log("antes da request")
-    const response: any = await api.get(`${URL?.data}/service_orders/${id}`, {
-      headers: {
-        "Content-Type": "application/json",
-        "access-token": credentials.accessToken,
-        "client": credentials.client,
-        "uid": credentials.uid,
-      },
-    })
-    return response.data
+    console.log('getServiceOrder: request headers', headers)
+    try {
+      const response: any = await api.get(`${URL?.data}/service_orders/${id}`, { headers })
+      console.log('getServiceOrder: response status', response.status)
+      return response.data
+    } catch (err: any) {
+      console.log('getServiceOrder error response status', err?.response?.status)
+      console.log('getServiceOrder error response data', err?.response?.data)
+      throw err
+    }
   } catch (error: any) {
     console.log(error)
+    throw error
   }
 }

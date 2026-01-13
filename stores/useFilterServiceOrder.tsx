@@ -19,7 +19,7 @@ export const useFilterServiceOrderStore = create<FilterServiceOrderState>((set) 
   filters: {
     status: "acting",
     so_type: "all",
-    start_date: moment().subtract(1, "month").format(dateFormat),
+    start_date: moment().subtract(2, "month").format(dateFormat),
     end_date: moment().add(1, "day").format(dateFormat),
     voyage: "all",
   },
@@ -32,7 +32,7 @@ export const useFilterServiceOrderStore = create<FilterServiceOrderState>((set) 
       filters: {
         status: "acting",
         so_type: "all",
-        start_date: moment().subtract(1, "month").format(dateFormat),
+        start_date: moment().subtract(2, "month").format(dateFormat),
         end_date: moment().add(1, "day").format(dateFormat),
         voyage: "all",
       },

@@ -2,6 +2,7 @@ import axios from "axios"
 import uuid from "react-native-uuid"
 
 import { getRealm } from "../databases/realm"
+import { Platform } from 'react-native'
 import { headersTypes } from "../enums/headersTypes"
 import { HeadersTypes } from "../interfaces/HeadersTypes"
 
@@ -30,17 +31,23 @@ async function saveCredentials(data: HeadersTypes) {
 
 const axiosEControleConfig = {
   timeout: 30000,
-  // Do not set a global baseURL here. The app constructs full URLs at call sites
-  // using the domain saved by scanning the QR (retrieveDomain()). Leaving a
-  // hardcoded baseURL caused requests to go to the wrong host on some devices.
+  // For web, set baseURL to empty string to use relative URLs with proxy
+  // For native, do not set baseURL as the app constructs full URLs at call sites
+  // using the domain saved by scanning the QR (retrieveDomain()).
+  baseURL: Platform.OS === 'web' ? '' : undefined,
 }
 
 const api = axios.create(axiosEControleConfig)
 
 async function setAxiosHeaders() {
   try {
+    if (Platform.OS === 'web') {
+      // On web we do not have Realm native; avoid attempting to access it.
+      return
+    }
+
     const realm = await getRealm()
-    const credentials: any = await realm.objects("Credentials")[0]
+    const credentials: any = realm && realm.objects ? realm.objects("Credentials")[0] : null
 
     if (credentials) {
       axios.defaults.headers.common["access-token"] = credentials.accessToken
@@ -87,14 +94,15 @@ api.interceptors.response.use(
       const isAuthResponse = reqUrl.includes("/auth/sign_in") || (reqMethod === "post" && reqUrl.includes("/auth"))
 
       if (isAuthResponse && accessToken && client && uid) {
-        saveCredentials({ accessToken, client, uid, tokenType })
+        saveCredentials({ accessToken, client, uid, tokenType } as HeadersTypes)
         console.log("Saved credentials from response headers (auth response)")
       } else if (accessToken && client && uid) {
         console.log("Auth headers present but not saved (non-auth response):", reqMethod, reqUrl)
       }
       // Debug: log which auth headers are present (if any)
       try {
-        const present = Object.keys(h).filter((k) => [headersTypes.accessToken, headersTypes.client, headersTypes.uid].includes(k))
+        const authHeaders = [headersTypes.accessToken, headersTypes.client, headersTypes.uid]
+        const present = Object.keys(h).filter((k) => authHeaders.includes(k as any))
         console.log('Response headers keys present for auth:', present)
       } catch (e) {
         // ignore

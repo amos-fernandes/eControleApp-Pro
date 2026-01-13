@@ -1,131 +1,93 @@
-import { openDatabaseSync } from 'expo-sqlite'
-
-let _db: any = null
-const getDB = () => {
-    if (!_db) {
-        _db = openDatabaseSync('econtrole.db')
-    }
-    return _db
-}
+import Realm from 'realm'
+import { getRealm } from './realm'
 
 /**
- * Inicializa o esquema de tabelas do banco de dados SQLite.
+ * Inicializa o esquema de tabelas do banco de dados Realm.
  */
-export const initDatabase = () => {
-    const db = getDB()
-    db.execSync(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA synchronous = NORMAL;
-
-    CREATE TABLE IF NOT EXISTS credentials (
-      _id TEXT PRIMARY KEY NOT NULL,
-      accessToken TEXT,
-      uid TEXT,
-      client TEXT,
-      created_at TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS users (
-      _id TEXT PRIMARY KEY NOT NULL,
-      email TEXT,
-      name TEXT,
-      created_at TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS service_orders (
-      id INTEGER PRIMARY KEY NOT NULL,
-      identifier TEXT,
-      status TEXT,
-      service_date TEXT,
-      customer_id INTEGER,
-      customer_name TEXT,
-      address_text TEXT,
-      observations TEXT,
-      driver_observations TEXT,
-      created_at TEXT,
-      vehicle_info TEXT,
-      voyage_info TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS service_executions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      service_order_id INTEGER,
-      service_name TEXT,
-      amount INTEGER,
-      unit_name TEXT,
-      item_weights TEXT,
-      FOREIGN KEY(service_order_id) REFERENCES service_orders(id)
-    );
-  `)
+export const initDatabase = async () => {
+    // Realm schemas are defined in realm.native.ts, so no initialization needed here
+    console.log('Database initialized (Realm)')
 }
 
 /**
  * Insere ou atualiza as credenciais de autenticacao.
  */
-export const insertCredentials = (cred: any) => {
-    const db = getDB()
-    db.runSync(
-        'INSERT OR REPLACE INTO credentials (_id, accessToken, uid, client, created_at) VALUES (?, ?, ?, ?, ?)',
-        [cred._id || 'main', cred.accessToken, cred.uid, cred.client, new Date().toISOString()],
-    )
+export const insertCredentials = async (cred: any) => {
+    try {
+        const realm = await getRealm()
+        realm.write(() => {
+            realm.create('Credentials', {
+                _id: cred._id || 'main',
+                accessToken: cred.accessToken,
+                uid: cred.uid,
+                client: cred.client,
+                created_at: new Date(),
+            }, Realm.UpdateMode.Modified)
+        })
+    } catch (error) {
+        console.warn('Realm insertCredentials failed, using in-memory storage:', error)
+        memoryStorage.credentials[0] = {
+            _id: cred._id || 'main',
+            accessToken: cred.accessToken,
+            uid: cred.uid,
+            client: cred.client,
+            created_at: new Date(),
+        }
+    }
 }
 
 /**
  * Insere ou atualiza os dados do usuario.
  */
-export const insertUser = (user: any) => {
-    const db = getDB()
-    db.runSync('INSERT OR REPLACE INTO users (_id, email, name, created_at) VALUES (?, ?, ?, ?)', [
-        user._id,
-        user.email,
-        user.name,
-        new Date().toISOString(),
-    ])
+export const insertUser = async (user: any) => {
+    const realm = await getRealm()
+    realm.write(() => {
+        realm.create('Login', {
+            _id: user._id,
+            email: user.email,
+            name: user.name,
+            created_at: new Date(),
+        }, Realm.UpdateMode.Modified)
+    })
 }
 
 /**
  * Realiza a insercao de uma Ordem de Servico de forma atomica.
  */
-export const insertServiceOrder = (order: any) => {
-    const db = getDB()
-    db.withTransactionSync(() => {
-        db.runSync(
-            `INSERT OR REPLACE INTO service_orders (
-        id, identifier, status, service_date, customer_id, customer_name, 
-        address_text, observations, driver_observations, created_at, vehicle_info, voyage_info
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                order.id,
-                order.identifier,
-                order.status,
-                order.service_date,
-                order.customer_id,
-                order.customer?.name,
-                order.address?.to_s || order.address?.name,
-                order.observations,
-                order.driver_observations,
-                order.created_at,
-                order.vehicle ? JSON.stringify(order.vehicle) : null,
-                order.voyage ? JSON.stringify(order.voyage) : null,
-            ],
-        )
+export const insertServiceOrder = async (order: any) => {
+    const realm = await getRealm()
+    realm.write(() => {
+        // Create or update service order
+        const serviceOrder = realm.create('ServicesOrdersList', {
+            id: order.id,
+            identifier: order.identifier,
+            status: order.status,
+            service_date: order.service_date,
+            customer_id: order.customer_id,
+            customer_name: order.customer?.name,
+            address_text: order.address?.to_s || order.address?.name,
+            observations: order.observations,
+            driver_observations: order.driver_observations,
+            created_at: order.created_at,
+            vehicle_info: order.vehicle ? JSON.stringify(order.vehicle) : null,
+            voyage_info: order.voyage ? JSON.stringify(order.voyage) : null,
+        }, Realm.UpdateMode.Modified)
 
-        db.runSync('DELETE FROM service_executions WHERE service_order_id = ?', [order.id])
+        // Delete existing executions for this order
+        const existingExecutions = realm.objects('SubmitService').filtered('_id == $0', order.id.toString())
+        realm.delete(existingExecutions)
 
+        // Insert new executions
         if (Array.isArray(order.service_executions)) {
             order.service_executions.forEach((exec: any) => {
-                db.runSync(
-                    `INSERT INTO service_executions (
-            service_order_id, service_name, amount, unit_name, item_weights
-          ) VALUES (?, ?, ?, ?, ?)`,
-                    [
-                        order.id,
-                        exec.service?.name,
-                        exec.amount,
-                        exec.unit?.name,
-                        exec.service_item_weights ? JSON.stringify(exec.service_item_weights) : null,
-                    ],
-                )
+                realm.create('SubmitService', {
+                    _id: `${order.id}_${exec.service?.name}_${exec.amount}`,
+                    service_order_id: order.id,
+                    service_name: exec.service?.name,
+                    amount: exec.amount,
+                    unit_name: exec.unit?.name,
+                    item_weights: exec.service_item_weights ? JSON.stringify(exec.service_item_weights) : null,
+                })
             })
         }
     })
@@ -134,25 +96,31 @@ export const insertServiceOrder = (order: any) => {
 /**
  * Retorna todas as Ordens de Servico armazenadas localmente.
  */
-export const getServiceOrders = () => {
-    const db = getDB()
-    return db.getAllSync('SELECT * FROM service_orders')
+export const getServiceOrders = async () => {
+    const realm = await getRealm()
+    return Array.from(realm.objects('ServicesOrder'))
 }
 
 /**
  * Obtem a credencial ativa.
  */
-export const getCredentials = () => {
-    const db = getDB()
-    return db.getFirstSync('SELECT * FROM credentials LIMIT 1')
+export const getCredentials = async () => {
+    try {
+        const realm = await getRealm()
+        const credentials = realm.objects('Credentials')
+        return credentials.length > 0 ? credentials[0] : null
+    } catch (error) {
+        console.warn('Realm getCredentials failed, using in-memory storage:', error)
+        return memoryStorage.credentials.length > 0 ? memoryStorage.credentials[0] : null
+    }
 }
 
 /**
  * Limpa todos os dados locais.
  */
-export const clearDatabase = () => {
-    const db = getDB()
-    db.execSync(
-        'DELETE FROM service_orders; DELETE FROM service_executions; DELETE FROM credentials; DELETE FROM users;',
-    )
+export const clearDatabase = async () => {
+    const realm = await getRealm()
+    realm.write(() => {
+        realm.deleteAll()
+    })
 }

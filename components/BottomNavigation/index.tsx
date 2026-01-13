@@ -1,7 +1,15 @@
 import React from "react"
-import { View, TouchableOpacity, Text } from "react-native"
+import { View, TouchableOpacity, Text, Platform } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import { WithLocalSvg } from "react-native-svg/css"
+
+let WithLocalSvg: any = null
+if (Platform.OS !== 'web') {
+  try {
+    WithLocalSvg = require('react-native-svg/css').WithLocalSvg
+  } catch (e) {
+    WithLocalSvg = null
+  }
+}
 
 interface BottomNavigationProps {
   currentScreen: "ListServicesOrder" | "Routes"
@@ -46,14 +54,16 @@ function BottomNavigation({ currentScreen }: BottomNavigationProps) {
         onPress={navigateToServicesOrder}
         activeOpacity={0.7}
       >
-        <WithLocalSvg
-          width={24}
-          height={24}
-          asset={require("../../assets/images/icons/factory.svg")}
-          style={{
-            tintColor: currentScreen === "ListServicesOrder" ? "#007AFF" : "#666",
-          }}
-        />
+        {WithLocalSvg ? (
+          <WithLocalSvg
+            width={24}
+            height={24}
+            asset={require("../../assets/images/icons/factory.svg")}
+            style={{ tintColor: currentScreen === "ListServicesOrder" ? "#007AFF" : "#666" }}
+          />
+        ) : (
+          <Text style={{ color: currentScreen === "ListServicesOrder" ? "#007AFF" : "#666" }}>🏭</Text>
+        )}
         <Text
           style={{
             fontSize: 12,
@@ -76,14 +86,16 @@ function BottomNavigation({ currentScreen }: BottomNavigationProps) {
         onPress={navigateToRoutes}
         activeOpacity={0.7}
       >
-        <WithLocalSvg
-          width={24}
-          height={24}
-          asset={require("../../assets/images/icons/delivery-truck-silhouette.svg")}
-          style={{
-            tintColor: currentScreen === "Routes" ? "#007AFF" : "#666",
-          }}
-        />
+        {WithLocalSvg ? (
+          <WithLocalSvg
+            width={24}
+            height={24}
+            asset={require("../../assets/images/icons/delivery-truck-silhouette.svg")}
+            style={{ tintColor: currentScreen === "Routes" ? "#007AFF" : "#666" }}
+          />
+        ) : (
+          <Text style={{ color: currentScreen === "Routes" ? "#007AFF" : "#666" }}>🚚</Text>
+        )}
         <Text
           style={{
             fontSize: 12,

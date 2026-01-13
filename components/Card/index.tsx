@@ -1,8 +1,16 @@
 import React, { useState } from "react"
-import { Text, View, TouchableOpacity } from "react-native"
+import { Text, View, TouchableOpacity, Platform, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { StackNavigationProp } from "@react-navigation/stack"
-import { WithLocalSvg } from "react-native-svg/css"
+
+let WithLocalSvg: any = null
+if (Platform.OS !== 'web') {
+  try {
+    WithLocalSvg = require('react-native-svg/css').WithLocalSvg
+  } catch (e) {
+    WithLocalSvg = null
+  }
+}
 
 import {
   ContainerTitle,
@@ -67,18 +75,20 @@ function Card({ cardData }: { cardData: any[] }) {
           paddingHorizontal: 15,
         }}
         onPress={() => setIsExpanded(!isExpanded)}
+        onLongPress={() => navigation.navigate("Routes", { voyageName })}
         activeOpacity={1}
       >
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          <WithLocalSvg
-            width={24}
-            height={24}
-            style={{ marginRight: 12 }}
-            asset={isExpanded 
-              ? require("@/assets/images/icons/arrow_left.svg")
-              : require("@/assets/images/icons/arrow_down.svg")
-            }
-          />
+          {WithLocalSvg ? (
+            <WithLocalSvg
+              width={24}
+              height={24}
+              style={{ marginRight: 12 }}
+              asset={isExpanded ? require("@/assets/images/icons/arrow_left.svg") : require("@/assets/images/icons/arrow_down.svg")}
+            />
+          ) : (
+            <Text style={{ marginRight: 12 }}>{isExpanded ? '◀' : '▾'}</Text>
+          )}
           <Text style={{ fontSize: 16, fontWeight: "bold", color: "#fff", flex: 1 }}>
             {voyageName}
           </Text>
@@ -117,7 +127,11 @@ function Card({ cardData }: { cardData: any[] }) {
           
           <View>
             <ContainerTitle style={{ marginTop: 10 }}>
-              <WithLocalSvg width="10%" height="100%" asset={require("@/assets/images/icons/factory.svg")} />
+              {WithLocalSvg ? (
+                <WithLocalSvg width="10%" height="100%" asset={require("@/assets/images/icons/factory.svg")} />
+              ) : (
+                <Text style={{ marginRight: 8 }}>🏭</Text>
+              )}
               <Description numberOfLines={2}>
                 {order.customer?.name || order.customer?.business_name || "Cliente não informado"}
               </Description>
@@ -126,7 +140,11 @@ function Card({ cardData }: { cardData: any[] }) {
           
           <View>
             <ContainerTitle style={{ marginTop: 10 }}>
-              <WithLocalSvg width="10%" height="100%" asset={require("@/assets/images/icons/delivery-truck-silhouette.svg")} />
+              {WithLocalSvg ? (
+                <WithLocalSvg width="10%" height="100%" asset={require("@/assets/images/icons/delivery-truck-silhouette.svg")} />
+              ) : (
+                <Text style={{ marginRight: 8 }}>🚚</Text>
+              )}
               <Description numberOfLines={2}>
                 {order.address?.to_s || order.address?.street || "Endereço não informado"}
               </Description>
@@ -142,6 +160,11 @@ function Card({ cardData }: { cardData: any[] }) {
               </ContainerTitle>
             </View>
           )}
+          <View style={{ marginTop: 10, flexDirection: 'row', justifyContent: 'flex-end' }}>
+            <TouchableOpacity onPress={() => navigation.navigate('GenerateMTR', { orderId: order.id })} style={{ padding: 8 }}>
+              <Text style={{ color: '#007AFF', fontWeight: 'bold' }}>Gerar MTR</Text>
+            </TouchableOpacity>
+          </View>
         </CardContainer>
       ))}
     </View>
