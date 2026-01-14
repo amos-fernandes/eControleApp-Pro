@@ -36,9 +36,9 @@ async function setAxiosHeaders() {
     const credentials: any = getSQLiteCredentials()
 
     if (credentials && credentials.accessToken) {
-      axios.defaults.headers.common["access-token"] = credentials.accessToken
-      axios.defaults.headers.common["client"] = credentials.client
-      axios.defaults.headers.common["uid"] = credentials.uid
+      api.defaults.headers.common["access-token"] = credentials.accessToken
+      api.defaults.headers.common["client"] = credentials.client
+      api.defaults.headers.common["uid"] = credentials.uid
     }
   } catch (error) {
     console.log("setAxiosHeaders error:", error)

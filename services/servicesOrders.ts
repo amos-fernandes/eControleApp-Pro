@@ -60,14 +60,7 @@ export const getServiceOrder = async (id: string) => {
       throw new Error("INVALID_DOMAIN")
     }
 
-    const response: any = await api.get(`${URL.data}/service_orders/${id}`, {
-      headers: {
-        "Content-Type": "application/json",
-        "access-token": credentials.accessToken,
-        "client": credentials.client,
-        "uid": credentials.uid,
-      },
-    })
+    const response: any = await api.get(`${URL.data}/service_orders/${id}`)
     return response.data
   } catch (error: any) {
     console.log(error)

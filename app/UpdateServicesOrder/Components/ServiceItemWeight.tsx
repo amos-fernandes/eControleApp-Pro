@@ -18,7 +18,7 @@ const ServiceitemWeight = ({
     if (unitValue && Object.keys(unitValue).length > 0) {
       const newValues = serviceItems.filter((serviceItem: any) => serviceItem && serviceItem.id != null).map((serviceItem: any) => {
         const itemId = serviceItem.id ? serviceItem.id.toString() : "0"
-        return unitValue[itemId] !== undefined ? unitValue[itemId].toString() : "0"
+        return unitValue[itemId] !== undefined && unitValue[itemId] !== null ? unitValue[itemId].toString() : "0"
       })
       setValues(newValues)
     } else {
