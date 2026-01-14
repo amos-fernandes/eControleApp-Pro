@@ -1,26 +1,20 @@
 import axios from "axios"
 import uuid from "react-native-uuid"
 
-import { getRealm } from "../databases/realm"
+// import { getRealm } from "../databases/realm"
+import { insertCredentials, getCredentials as getSQLiteCredentials } from "../databases/database"
 import { headersTypes } from "../enums/headersTypes"
 import { HeadersTypes } from "../interfaces/HeadersTypes"
 
 async function saveCredentials(data: HeadersTypes) {
-  console.log("Saving credentials to Realm:", data)
-  const realm = await getRealm()
-
+  console.log("Saving credentials to DB:", data)
   try {
     if (data && data.accessToken && data.client && data.uid) {
-      const credentials = realm.objects("Credentials")
-      realm.write(() => {
-        realm.delete(credentials)
-        realm.create("Credentials", {
-          _id: uuid.v4().toString(),
-          accessToken: data.accessToken,
-          uid: data.uid,
-          client: data.client,
-          created_at: new Date(),
-        })
+      insertCredentials({
+        _id: 'main',
+        accessToken: String(data.accessToken),
+        uid: String(data.uid),
+        client: String(data.client),
       })
     }
   } catch (error) {
@@ -39,8 +33,7 @@ const api = axios.create(axiosEControleConfig)
 
 async function setAxiosHeaders() {
   try {
-    const realm = await getRealm()
-    const credentials: any = await realm.objects("Credentials")[0]
+    const credentials: any = getSQLiteCredentials()
 
     if (credentials) {
       axios.defaults.headers.common["access-token"] = credentials.accessToken

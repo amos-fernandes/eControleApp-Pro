@@ -1,6 +1,6 @@
 import api from "./connection"
 import { retrieveDomain } from "./retrieveUserSession"
-import { getRealm } from "../databases/realm"
+import { getCredentials as getSQLiteCredentials } from "../databases/database"
 
 interface FilterServiceOrderState {
   filters: {
@@ -12,26 +12,23 @@ interface FilterServiceOrderState {
   }
 }
 export const getServicesOrders = async ({ filters }: FilterServiceOrderState) => {
-  const realm = await getRealm()
   const URL = await retrieveDomain()
 
   try {
-    if (!realm || typeof realm.objects !== "function") {
-      console.warn("getServicesOrders: Realm not available (stub or missing)")
-      throw new Error("LOCAL_DB_UNAVAILABLE")
-    }
-
-    const credentials: any = realm.objects("Credentials")[0] || null
+    const credentials: any = getSQLiteCredentials()
     if (!credentials || !credentials.accessToken) {
       console.warn("getServicesOrders: No credentials found in local DB")
       throw new Error("NO_CREDENTIALS")
     }
-    const params = {
-      ...filters,
+
+    if (!URL || URL.status !== 200 || !URL.data) {
+      throw new Error("INVALID_DOMAIN")
     }
 
+    const params = { ...filters }
+
     return await api
-      .get(`${URL?.data}/service_orders`, {
+      .get(`${URL.data}/service_orders`, {
         params,
         headers: {
           "Content-Type": "application/json",
@@ -49,31 +46,21 @@ export const getServicesOrders = async ({ filters }: FilterServiceOrderState) =>
   }
 }
 export const getServiceOrder = async (id: string) => {
-  const realm = await getRealm()
   const URL = await retrieveDomain()
   console.log("id de entrada", id)
 
   try {
-    if (!realm || typeof realm.objects !== "function") {
-      console.warn("getServiceOrder: Realm not available (stub or missing)")
-      throw new Error("LOCAL_DB_UNAVAILABLE")
-    }
-
-    const credentials: any = realm.objects("Credentials")[0] || null
+    const credentials: any = getSQLiteCredentials()
     if (!credentials || !credentials.accessToken) {
       console.warn("getServiceOrder: No credentials found in local DB")
       throw new Error("NO_CREDENTIALS")
     }
 
-    const params = {
-      "access-token": credentials.accessToken,
-      "client": credentials.client,
-      "uid": credentials.uid,
+    if (!URL || URL.status !== 200 || !URL.data) {
+      throw new Error("INVALID_DOMAIN")
     }
-    console.log("params", params)
-    console.log("URL", URL)
-    console.log("antes da request")
-    const response: any = await api.get(`${URL?.data}/service_orders/${id}`, {
+
+    const response: any = await api.get(`${URL.data}/service_orders/${id}`, {
       headers: {
         "Content-Type": "application/json",
         "access-token": credentials.accessToken,
