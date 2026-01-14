@@ -7,9 +7,10 @@ import "moment/locale/pt-br"
 moment.locale("pt-br")
 
 export const ServiceData = ({ serviceData }: any) => {
-  const date = `${moment(serviceData.date).format("DD")} de ${moment(serviceData.date).format(
+  if (!serviceData) return null
+  const date = serviceData.date ? `${moment(serviceData.date).format("DD")} de ${moment(serviceData.date).format(
     "MMM",
-  )} de ${moment(serviceData.date).format("YYYY")}`
+  )} de ${moment(serviceData.date).format("YYYY")}` : ""
 
   return (
     <CardContainer style={{ marginTop: 20 }}>
@@ -23,7 +24,7 @@ export const ServiceData = ({ serviceData }: any) => {
         </View>
         <View>
           <TextBold>Observações</TextBold>
-          <Text>{serviceData.observations}</Text>
+          <Text>{serviceData.observations ?? ""}</Text>
         </View>
       </Background>
     </CardContainer>

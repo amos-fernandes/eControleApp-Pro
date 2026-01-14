@@ -4,7 +4,7 @@ import { retrieveUserSession, retrieveDomain } from "../../services/retrieveUser
 import { GetDataFromSecureStore } from "@/utils/SecureStore"
 import Authentication from "../Authentication"
 import ListServicesOrder from "../ListServicesOrder"
-import { getRealm } from "@/databases/realm"
+import { getCredentials } from "@/databases/database"
 
 function AuthOrApp() {
   const [ready, setReady] = useState(false)
@@ -17,20 +17,17 @@ function AuthOrApp() {
         const domain = await retrieveDomain()
         const userObj = user && (user.data ? user.data : user)
 
-        // Require user_session (having an email) and domain to be valid and have credentials stored in Realm
+        // Require user_session (having an email) and domain to be valid and have credentials stored in DB
         // Additionally require an explicit `auto_login` flag in SecureStore to allow automatic login.
         const allowAuto = (await GetDataFromSecureStore("auto_login")) === "true"
         if (userObj && userObj.email && domain && domain.status === 200 && allowAuto) {
           try {
-            const realm = await getRealm()
-            if (realm && typeof realm.objects === "function") {
-              const creds: any = realm.objects("Credentials")?.[0]
-              if (creds && creds.accessToken) {
-                setAuthenticated(true)
-              }
+            const creds: any = getCredentials()
+            if (creds && creds.accessToken) {
+              setAuthenticated(true)
             }
           } catch (e) {
-            // realm unavailable or no credentials persisted — treat as not authenticated
+            // credentials unavailable — treat as not authenticated
             setAuthenticated(false)
           }
         }

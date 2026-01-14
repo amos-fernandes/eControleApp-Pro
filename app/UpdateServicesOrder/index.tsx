@@ -4,7 +4,6 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import { StackNavigationProp } from "@react-navigation/stack"
 
 import InfoConnection from "@/components/InfoConnection"
-import { getRealm } from "@/databases/realm"
 import { ServiceInterface } from "@/interfaces/Service"
 import sendServiceOrder from "@/services/sendServiceOrder"
 import { getServiceOrder } from "@/services/servicesOrders"
@@ -149,7 +148,6 @@ function UpdateServicesOrder(props: any): JSX.Element {
 
   const submit = async () => {
     setLoading(true)
-    const realm = await getRealm()
     const dataToSend: any = {
       checking: true,
       collected_equipment: equipmentsLeft,
@@ -164,51 +162,8 @@ function UpdateServicesOrder(props: any): JSX.Element {
     }
 
     try {
-      if (connection) {
-        const response: any = await sendServiceOrder(order.id, dataToSend)
-
-        if (response.status === 200) {
-          const service = realm.objects("SubmitService").filtered(`_id = '${order.id}'`)[0]
-          if (service) {
-            realm.write(() => {
-              realm.delete(service)
-            })
-          }
-        }
-        navigation.goBack()
-      } else {
-        const service: any = realm.objects("SubmitService").filtered(`_id = '${order.id}'`)[0]
-
-        if (service) {
-          realm.write(() => {
-            realm.delete(service)
-          })
-        }
-
-        realm.write(() => {
-          realm.create("SubmitService", {
-            _id: order.id.toString(),
-            collected_equipment_attributes: equipmentsLeft,
-            lended_equipment_attributes: equipmentsCollected,
-            driver_observations: note,
-            arrival_date: arrivalDate ? arrivalDate.toString() : "",
-            departure_date: departureDate ? departureDate.toString() : "",
-            start_km: startKM,
-            end_km: endKM,
-            certificate_memo: certificate,
-            service_executions: JSON.stringify(serviceExecutions),
-          })
-        })
-
-        const servicesOrders: any = realm
-          .objects("ServicesOrdersList")
-          .filtered(`id = '${order.id}'`)[0]
-        if (servicesOrders) {
-          realm.write(() => {
-            realm.delete(servicesOrders)
-          })
-        }
-
+      const response: any = await sendServiceOrder(order.id, dataToSend)
+      if (response.status === 200) {
         navigation.goBack()
       }
     } catch (error) {

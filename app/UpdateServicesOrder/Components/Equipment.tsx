@@ -3,7 +3,6 @@ import { View, TouchableOpacity } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 import { MultipleSelectList } from "react-native-dropdown-select-list"
 
-import { getRealm } from "@/databases/realm"
 import { getEquipamentsCollected, getEquipamentsLeft } from "@/services/equipaments"
 import checkConnection from "@/utils/checkConnection"
 
@@ -22,28 +21,9 @@ export const Equipment = ({ customerId, onChangeLeft, onChangeCollected }: any) 
   const newArrEquipments: any = []
 
   const equipmentLeftInClient = async () => {
-    const realm = await getRealm()
-
-    if (connection) {
-      equipmentLeftInClientArr = await getEquipamentsLeft(customerId, true)
-    } else {
-      try {
-        const equipaments: any = realm
-          .objects("EquipamentLeft")
-          .filtered(`current_customer_id = '${customerId}'`)
-        if (equipaments.length > 0) {
-          // data = equipaments
-        }
-      } catch (error) {
-        console.log(error)
-      }
-      // finally {
-      //   realm.close();
-      // }
-    }
-
-    if (equipmentLeftInClientArr) {
-      equipmentLeftInClientArr?.items?.map((equipament: any) => {
+    equipmentLeftInClientArr = await getEquipamentsLeft(customerId, true)
+    if (equipmentLeftInClientArr?.items) {
+      equipmentLeftInClientArr.items.map((equipament: any) => {
         arrEquipaments.push({
           key: equipament.id,
           value: `${equipament.equipment_type} - ${equipament.current_customer.name}`,
@@ -54,28 +34,9 @@ export const Equipment = ({ customerId, onChangeLeft, onChangeCollected }: any) 
   }
 
   const equipmentCollectedInClient = async () => {
-    const realm = await getRealm()
-
-    if (connection) {
-      equipmentCollectedInClientArr = await getEquipamentsCollected(customerId, false)
-    } else {
-      try {
-        const equipaments: any = realm
-          .objects("EquipamentCollected")
-          .filtered(`current_customer_id = '${customerId}'`)
-        if (equipaments.length > 0) {
-          equipmentCollectedInClientArr = equipaments
-        }
-      } catch (error) {
-        console.log(error)
-      }
-      // finally {
-      //   realm.close();
-      // }
-    }
-
-    if (equipmentCollectedInClientArr) {
-      equipmentCollectedInClientArr?.items?.map((equipament: any) => {
+    equipmentCollectedInClientArr = await getEquipamentsCollected(customerId, false)
+    if (equipmentCollectedInClientArr?.items) {
+      equipmentCollectedInClientArr.items.map((equipament: any) => {
         arrEquipaments.push({
           key: equipament.id,
           value: `${equipament.equipment_type} - ${equipament.current_customer.name}`,
@@ -88,7 +49,7 @@ export const Equipment = ({ customerId, onChangeLeft, onChangeCollected }: any) 
   const onChangeSelectedCollected = (equipments: string[]) => {
     if (equipments && equipments.length > 0) {
       for (const equipment of equipments) {
-        const found = equipmentCollectedInClientArr.item.filter(
+        const found = equipmentCollectedInClientArr?.items?.filter(
           (element: any) =>
             `${element.equipment_type} - ${element.current_customer.name}` === equipment,
         )
@@ -101,7 +62,7 @@ export const Equipment = ({ customerId, onChangeLeft, onChangeCollected }: any) 
   const onChangeSelectedLeft = (equipments: string[]) => {
     if (equipments && equipments.length > 0) {
       for (const equipment of equipments) {
-        const found = equipmentCollectedInClientArr.item.filter(
+        const found = equipmentLeftInClientArr?.items?.filter(
           (element: any) =>
             `${element.equipment_type} - ${element.current_customer.name}` === equipment,
         )
