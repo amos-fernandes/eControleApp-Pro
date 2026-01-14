@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Slot } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
@@ -10,6 +10,8 @@ import { SaveDataToSecureStore } from "@/utils/SecureStore"
 console.log("ROOT_LAYOUT_LOADED: Starting boot sequence...")
 
 export default function RootLayout() {
+  const [isReady, setIsReady] = useState(false)
+
   useEffect(() => {
     const initializeApp = async () => {
       console.log("ROOT_LAYOUT_EFFECT: Initializing Database...")
@@ -35,11 +37,17 @@ export default function RootLayout() {
       }
 
       // Hide splash screen
-      SplashScreen.hideAsync()
+      await SplashScreen.hideAsync()
+      setIsReady(true)
     }
 
     initializeApp()
   }, [])
+
+  if (!isReady) {
+    // Return null while initializing
+    return null
+  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

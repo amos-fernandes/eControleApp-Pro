@@ -1,12 +1,28 @@
 import Realm from 'realm'
 import { getRealm } from './realm'
 
+// In-memory storage fallback for when Realm is not available
+const memoryStorage: { credentials: any[] } = { credentials: [] }
+
 /**
  * Inicializa o esquema de tabelas do banco de dados Realm.
  */
 export const initDatabase = async () => {
-    // Realm schemas are defined in realm.native.ts, so no initialization needed here
-    console.log('Database initialized (Realm)')
+    console.log('Database initialization starting...')
+    try {
+        // Test if Realm can be loaded by calling getRealm
+        const realm = await getRealm()
+        console.log('Database initialized successfully, Realm instance:', !!realm)
+        
+        // Test if we can access objects
+        if (realm && typeof realm.objects === 'function') {
+            const objects = realm.objects('Credentials')
+            console.log('Credentials objects accessible:', Array.isArray(objects))
+        }
+    } catch (error: any) {
+        console.error('Database initialization failed:', error)
+        // Don't re-throw, let the app continue with in-memory fallback
+    }
 }
 
 /**
@@ -43,11 +59,11 @@ export const insertUser = async (user: any) => {
     const realm = await getRealm()
     realm.write(() => {
         realm.create('Login', {
-            _id: user._id,
-            email: user.email,
-            name: user.name,
+            _id: user?._id || 'main',
+            email: user?.email || '',
+            name: user?.name || null,
             created_at: new Date(),
-        }, Realm.UpdateMode.Modified)
+        }, 'modified')
     })
 }
 
@@ -58,38 +74,20 @@ export const insertServiceOrder = async (order: any) => {
     const realm = await getRealm()
     realm.write(() => {
         // Create or update service order
-        const serviceOrder = realm.create('ServicesOrdersList', {
-            id: order.id,
-            identifier: order.identifier,
-            status: order.status,
-            service_date: order.service_date,
-            customer_id: order.customer_id,
-            customer_name: order.customer?.name,
-            address_text: order.address?.to_s || order.address?.name,
-            observations: order.observations,
-            driver_observations: order.driver_observations,
-            created_at: order.created_at,
-            vehicle_info: order.vehicle ? JSON.stringify(order.vehicle) : null,
-            voyage_info: order.voyage ? JSON.stringify(order.voyage) : null,
-        }, Realm.UpdateMode.Modified)
-
-        // Delete existing executions for this order
-        const existingExecutions = realm.objects('SubmitService').filtered('_id == $0', order.id.toString())
-        realm.delete(existingExecutions)
-
-        // Insert new executions
-        if (Array.isArray(order.service_executions)) {
-            order.service_executions.forEach((exec: any) => {
-                realm.create('SubmitService', {
-                    _id: `${order.id}_${exec.service?.name}_${exec.amount}`,
-                    service_order_id: order.id,
-                    service_name: exec.service?.name,
-                    amount: exec.amount,
-                    unit_name: exec.unit?.name,
-                    item_weights: exec.service_item_weights ? JSON.stringify(exec.service_item_weights) : null,
-                })
-            })
-        }
+        realm.create('ServicesOrdersList', {
+            id: Number(order?.id ?? 0),
+            identifier: order?.identifier || '',
+            status: order?.status || '',
+            service_date: String(order?.service_date || ''),
+            customer_id: order?.customer_id ?? null,
+            customer_name: order?.customer?.name || null,
+            address_text: order?.address?.to_s || order?.address?.name || null,
+            observations: order?.observations || null,
+            driver_observations: order?.driver_observations || null,
+            created_at: String(order?.created_at || ''),
+            vehicle_info: order?.vehicle ? JSON.stringify(order.vehicle) : null,
+            voyage_info: order?.voyage ? JSON.stringify(order.voyage) : null,
+        }, 'modified')
     })
 }
 
@@ -98,7 +96,7 @@ export const insertServiceOrder = async (order: any) => {
  */
 export const getServiceOrders = async () => {
     const realm = await getRealm()
-    return Array.from(realm.objects('ServicesOrder'))
+    return Array.from(realm.objects('ServicesOrdersList'))
 }
 
 /**

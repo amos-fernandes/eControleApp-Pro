@@ -4,7 +4,7 @@ import { retrieveUserSession, retrieveDomain } from "../../services/retrieveUser
 import { GetDataFromSecureStore } from "@/utils/SecureStore"
 import Authentication from "../Authentication"
 import ListServicesOrder from "../ListServicesOrder"
-import { getCredentials } from "../../databases/database"
+import { getRealm } from "../../databases/realm"
 
 function AuthOrApp() {
   const [ready, setReady] = useState(false)

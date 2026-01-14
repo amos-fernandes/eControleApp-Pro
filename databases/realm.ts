@@ -1,9 +1,9 @@
 // databases/realm.ts
 import { Platform } from 'react-native';
+import { getRealm as getRealmNative } from './realm.native';
 
 // Platform-specific imports
 let realmInstance: any = null;
-let isInitializing = false;
 
 export const getRealm = async () => {
   // Return existing instance if available
@@ -14,22 +14,10 @@ export const getRealm = async () => {
   // Check if we're on a native platform (Android/iOS)
   if (Platform.OS === 'android' || Platform.OS === 'ios') {
     try {
-      // Prevent multiple concurrent initializations
-      if (isInitializing) {
-        while (isInitializing) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return realmInstance;
-      }
-
-      isInitializing = true;
       console.log('Initializing Realm...', Platform.OS);
       
-      // Import the native implementation directly
-      const realmModule = await import('./realm.native');
-      
-      console.log('Realm module imported successfully');
-      realmInstance = await realmModule.getRealm();
+      // Call the native implementation directly
+      realmInstance = await getRealmNative();
       
       console.log('Realm instance created successfully');
       return realmInstance;
@@ -37,8 +25,6 @@ export const getRealm = async () => {
       console.error('Error loading Realm:', error);
       realmInstance = null; // Reset on error
       throw new Error(`Failed to load Realm on ${Platform.OS}: ${error?.message || 'Unknown error'}`);
-    } finally {
-      isInitializing = false;
     }
   }
   
