@@ -1,8 +1,10 @@
 import styled from "styled-components/native"
-import { Pressable, View, Text } from 'react-native';
+import { Pressable, View, Text, Dimensions } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export const CardContainer = styled(Pressable)`
-  width: 95%;
+  width: ${screenWidth - 40}px;
   height: auto;
   padding: 20px;
   border-radius: 10px;

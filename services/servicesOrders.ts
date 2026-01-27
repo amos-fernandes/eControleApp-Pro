@@ -27,7 +27,7 @@ export const getServicesOrders = async ({ filters }: FilterServiceOrderState) =>
 
     const params = { ...filters }
 
-    return await api
+    const response = await api
       .get(`${URL.data}/service_orders`, {
         params,
         headers: {
@@ -41,6 +41,13 @@ export const getServicesOrders = async ({ filters }: FilterServiceOrderState) =>
         console.log("error", error)
         throw error
       })
+
+    console.log("getServicesOrders response:", response)
+    console.log("getServicesOrders response.data:", response.data)
+    console.log("getServicesOrders response.data type:", typeof response.data)
+    console.log("getServicesOrders response.data keys:", response.data ? Object.keys(response.data) : "no data")
+
+    return response.data
   } catch (error: any) {
     throw error
   }

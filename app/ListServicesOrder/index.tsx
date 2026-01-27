@@ -7,10 +7,13 @@ import {
   RefreshControl,
   ActivityIndicator,
   FlatList,
+  useWindowDimensions,
+  TouchableOpacity,
 } from "react-native"
 import { useFocusEffect, useRoute } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { useRouter } from "expo-router"
 
 import { useFilterServiceOrderStore } from "@/stores/useFilterServiceOrder";
 import { getServicesOrders } from "@/services/servicesOrders"
@@ -18,6 +21,8 @@ import { retrieveUserSession } from "@/services/retrieveUserSession"
 
 import Card from "../../components/Card"
 import BottomNavigation from "../../components/BottomNavigation"
+import { DefaultButton } from "../../components/Button"
+import ListServicesFilters from "./ListServicesFilters"
 
 const isListServicesOrderScreen = (route: any) => route.name === "ListServicesOrder"
 
@@ -26,8 +31,15 @@ function ListServicesOrder(): JSX.Element {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
 
   const { filters } = useFilterServiceOrderStore()
+  const layout = useWindowDimensions()
+  const [index, setIndex] = useState(0)
+  const [routes] = useState([
+    { key: 'withTrips', title: 'Com Viagens' },
+    { key: 'withoutTrips', title: 'Sem Viagens' },
+  ])
 
   const fetchOrders = async (_filters?: any) => {
     setLoading(true)
@@ -61,6 +73,9 @@ function ListServicesOrder(): JSX.Element {
         ordersData = response.data.service_orders
       } else if (Array.isArray(response)) {
         ordersData = response
+      } else if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+        // Handle case where API returns object with numeric keys instead of array
+        ordersData = Object.values(response.data)
       } else {
         // last resort: try to find any array in response object
         const maybeArray = Object.values(response).find((v: any) => Array.isArray(v))
@@ -121,7 +136,7 @@ function ListServicesOrder(): JSX.Element {
         order?.voyage_id ||
         order?.route_name ||
         order?.identifier ||
-        "Sem Viagem"
+        "Viagem"
       if (!acc[voyageName]) {
         acc[voyageName] = []
       }
@@ -130,12 +145,67 @@ function ListServicesOrder(): JSX.Element {
     }, {} as Record<string, any[]>)
     return grouped
   }
+  const WithTripsTab = ({ orders }: { orders: any[] }) => {
+    const groupedOrders = groupOrdersByVoyage(orders)
+    const groupedArray = Object.entries(groupedOrders).map(([voyageName, orders]) => ({
+      voyageName,
+      orders: orders as any[]
+    }))
+    return (
+      <FlatList
+        data={groupedArray}
+        keyExtractor={(item, index) => `${item.voyageName}-${index}`}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingVertical: 10,
+          alignItems: "center",
+        }}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refreshServicesOrderList} />
+        }
+        renderItem={({ item }) => (
+          <View style={{ width: "90%" }}>
+            <Card cardData={item.orders} />
+          </View>
+        )}
+        ListEmptyComponent={
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ fontSize: 17 }}>Nenhuma ordem de serviço encontrada.</Text>
+          </View>
+        }
+      />
+    )
+  }
+  const WithoutTripsTab = ({ orders }: { orders: any[] }) => {
+    return (
+      <FlatList
+        data={orders}
+        keyExtractor={(item, index) => `${item.code}-${index}`}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingVertical: 10,
+          alignItems: "center",
+        }}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refreshServicesOrderList} />
+        }
+        renderItem={({ item }) => (
+          <View style={{ width: "90%" }}>
+            <Card cardData={[item]} />
+          </View>
+        )}
+        ListEmptyComponent={
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ fontSize: 17 }}>Nenhuma ordem de serviço encontrada.</Text>
+          </View>
+        }
+      />
+    )
+  }
 
-  const groupedOrders = groupOrdersByVoyage(Array.isArray(orders) ? orders : [])
-  const groupedArray = Object.entries(groupedOrders).map(([voyageName, orders]) => ({
-    voyageName,
-    orders: orders as any[]
-  }))
+  const hasTrips = (order: any) => !!order?.voyage
+  const ordersWithTrips = orders.filter(hasTrips)
+  const ordersWithoutTrips = orders.filter(order => !hasTrips(order))
 
   return (
     <SafeAreaView>
@@ -147,6 +217,16 @@ function ListServicesOrder(): JSX.Element {
           alignItems: "stretch",
         }}
       >
+        {/* Header with Filter Button */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, backgroundColor: "#f8f9fa" }}>
+          <Text style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>Ordens de Serviço</Text>
+          <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={{ padding: 8 }}>
+            <Text style={{ fontSize: 16, color: "#007AFF" }}>Filtros</Text>
+          </TouchableOpacity>
+        </View>
+
+        {showFilters && <ListServicesFilters />}
+
         {loading ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <ActivityIndicator size="large" color="#56d156" />
@@ -159,45 +239,34 @@ function ListServicesOrder(): JSX.Element {
               Verifique sua conexão e tente novamente
             </Text>
           </View>
-        ) : (!Array.isArray(orders) || orders.length === 0) ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 20,
-            }}
-          >
-            <Text style={{ fontSize: 17, color: "#666", textAlign: "center" }}>
-              Nenhuma ordem de serviço encontrada.
-            </Text>
-            <Text style={{ fontSize: 14, color: "#999", textAlign: "center", marginTop: 10 }}>
-              Verifique os filtros aplicados ou tente recarregar
-            </Text>
-          </View>
         ) : (
-          <FlatList
-            data={groupedArray}
-            keyExtractor={(item, index) => `${item.voyageName}-${index}`}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingVertical: 10,
-              alignItems: "center",
-            }}
-            refreshControl={
-              <RefreshControl refreshing={loading} onRefresh={refreshServicesOrderList} />
-            }
-            renderItem={({ item }) => (
-              <View style={{ width: "90%" }}>
-                <Card cardData={item.orders} />
-              </View>
-            )}
-            ListEmptyComponent={
-              <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ fontSize: 17 }}>Nenhuma ordem de serviço encontrada.</Text>
-              </View>
-            }
-          />
+          <View style={{ flex: 1 }}>
+            {/* Tab Buttons */}
+            <View style={{ flexDirection: 'row', backgroundColor: '#fff', elevation: 2 }}>
+              {routes.map((route, i) => (
+                <TouchableOpacity
+                  key={route.key}
+                  onPress={() => setIndex(i)}
+                  style={{
+                    flex: 1,
+                    padding: 16,
+                    alignItems: 'center',
+                    backgroundColor: index === i ? '#f0f8ff' : '#fff',
+                    borderBottomWidth: index === i ? 2 : 0,
+                    borderBottomColor: '#007AFF',
+                  }}
+                >
+                  <Text style={{ fontSize: 16, color: index === i ? '#007AFF' : '#666', fontWeight: index === i ? 'bold' : 'normal' }}>
+                    {route.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {/* Tab Content */}
+            <View style={{ flex: 1 }}>
+              {index === 0 ? <WithTripsTab orders={ordersWithTrips} /> : <WithoutTripsTab orders={ordersWithoutTrips} />}
+            </View>
+          </View>
         )}
       </View>
       <BottomNavigation currentScreen="ListServicesOrder" />

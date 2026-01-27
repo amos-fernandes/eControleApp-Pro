@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react"
 import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator } from "react-native"
-import { useFocusEffect, useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import { useFocusEffect } from "@react-navigation/native"
+import { useRouter, useLocalSearchParams } from "expo-router"
 
 import InfoConnection from "@/components/InfoConnection"
 import { ServiceInterface } from "@/interfaces/Service"
@@ -21,11 +21,11 @@ import { ServiceData } from "./Components/ServiceData"
 import { Services } from "./Components/Services"
 import { Container, CardContainer, TextBold, Text, Header } from "./styles"
 import { TextButton, Button } from "../../components/GlobalStyles/styles"
-import { StackParamList } from "../../routes/stack.routes"
 
-type ServicesOrderScreenProp = StackNavigationProp<StackParamList, "UpdateServicesOrder">
-function UpdateServicesOrder(props: any): JSX.Element {
-  const navigation = useNavigation<ServicesOrderScreenProp>()
+function UpdateServicesOrder(): JSX.Element {
+  const router = useRouter()
+  const params = useLocalSearchParams()
+  const id = params.id as string
   const [order, setOrder]: any = useState(null)
   const [equipmentsLeft, setEquipmentsLeft]: any = useState([])
   const [equipmentsCollected, setEquipmentsCollected]: any = useState([])
@@ -45,7 +45,7 @@ function UpdateServicesOrder(props: any): JSX.Element {
   const list = async () => {
     try {
       setLoading(true)
-      const resData = await getServiceOrder(props.route.params.id)
+      const resData = await getServiceOrder(id)
 
       // Axios may have already parsed it, or it's a string from legacy local storage
       const orderData = typeof resData === 'string' ? JSON.parse(resData) : resData
@@ -164,7 +164,7 @@ function UpdateServicesOrder(props: any): JSX.Element {
     try {
       const response: any = await sendServiceOrder(order.id, dataToSend)
       if (response.status === 200) {
-        navigation.goBack()
+        router.back()
       }
     } catch (error) {
       console.log("SUBMIT ERROR: ", error)

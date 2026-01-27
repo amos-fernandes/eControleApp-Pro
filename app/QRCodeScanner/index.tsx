@@ -1,21 +1,16 @@
 import React, { useRef, useState, useEffect } from "react"
 import { View, StyleSheet, Button, Text } from "react-native"
 import { Camera, CameraType, CameraView } from "expo-camera"
-import { useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import { useRouter } from "expo-router"
 
 import { retrieveDomain } from "@/services/retrieveUserSession"
-import { SaveDataToSecureStore } from "@/utils/SecureStore"
-
-import { StackParamList } from "../../routes/stack.routes"
-
-type authScreenProp = StackNavigationProp<StackParamList, "AuthenticationScreen">
+import { SaveDataToSecureStore, GetDataFromSecureStore } from "@/utils/SecureStore"
 
 function QRCode(): JSX.Element {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [scanned, setScanned] = useState(false)
   const cameraRef = useRef<CameraType | null>(null)
-  const navigation = useNavigation<authScreenProp>()
+  const router = useRouter()
 
   useEffect(() => {
     ; (async () => {
@@ -122,7 +117,30 @@ function QRCode(): JSX.Element {
 
       // Após salvar domínio/redirect, navegue para a tela de Login
       console.log("handleBarCodeScanned: domain saved")
-      navigation.navigate("Login")
+
+      // Extract and save subdomain on first read
+      const savedDomainData = await GetDataFromSecureStore("domain")
+      if (savedDomainData) {
+        try {
+          const parsed = JSON.parse(savedDomainData)
+          const domainUrl = parsed.domain
+          const url = new URL(domainUrl)
+          if (url.hostname.includes("econtrole.com")) {
+            const subdomain = url.hostname.replace(".econtrole.com", "")
+            const existingSubdomain = await GetDataFromSecureStore("subdomain")
+            if (!existingSubdomain) {
+              await SaveDataToSecureStore("subdomain", subdomain)
+              console.log("Subdomain saved:", subdomain)
+            } else {
+              console.log("Subdomain already cached:", existingSubdomain)
+            }
+          }
+        } catch (e) {
+          console.log("Error extracting subdomain:", e)
+        }
+      }
+
+      router.push("/Login")
     } catch (err) {
       console.log("QRCode handling error:", err)
       setScanned(false)

@@ -5,7 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="43079682-2279-4826-bf76-93c2958d6275" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/android/app/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.expo/devices.json" beforeDir="false" afterPath="$PROJECT_DIR$/.expo/devices.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Authentication/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/Authentication/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/ListServicesOrder/ListServicesFilters.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/ListServicesOrder/ListServicesFilters.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/ListServicesOrder/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/ListServicesOrder/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Login/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/Login/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/QRCodeScanner/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/QRCodeScanner/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Routes/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/Routes/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/UpdateServicesOrder/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/UpdateServicesOrder/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/BottomNavigation/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/BottomNavigation/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Button/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Button/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Card/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Card/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/Card/styles.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/Card/styles.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/connection.ts" beforeDir="false" afterPath="$PROJECT_DIR$/services/connection.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/voyages.ts" beforeDir="false" afterPath="$PROJECT_DIR$/services/voyages.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,21 +55,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "E:/dev/econtrol/eControleApp-Pro"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;backup/playstore-mess&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/dev/econtrol/eControleApp-Pro&quot;
   }
-}]]></component>
+}</component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="43079682-2279-4826-bf76-93c2958d6275" name="Changes" comment="" />

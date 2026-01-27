@@ -1,18 +1,14 @@
 import React from "react"
 import { Alert, TouchableOpacity, View, Text } from "react-native"
-import { useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import { useRouter } from "expo-router"
 
 import { DefaultButton } from "../../components/Button"
 import { Logo, Container, Input } from "../../components/GlobalStyles/styles"
-import { StackParamList } from "../../routes/stack.routes"
 import login from "../../services/login"
 import { DeleteDataFromSecureStore, GetDataFromSecureStore } from "@/utils/SecureStore"
 
-type ServicesOrderScreenProp = StackNavigationProp<StackParamList, "ListServicesOrder">
-
 function Login(): JSX.Element {
-  const navigation = useNavigation<ServicesOrderScreenProp>()
+  const router = useRouter()
   const [email, onChangeEmail] = React.useState("motoristaaplicativo@econtrole.com")
   const [password, onChangePassword] = React.useState("motoapp123")
   const [loading, setLoading] = React.useState(false)
@@ -29,7 +25,7 @@ function Login(): JSX.Element {
           if (redirect && typeof redirect === "string") {
             // Caso conhecido: /operacional/viagens -> abrir tela de Rotas/Viagens
             if (redirect.includes("operacional") && redirect.includes("viagens")) {
-              navigation.navigate("Routes")
+              router.push("/Routes")
               return
             }
           }
@@ -37,7 +33,7 @@ function Login(): JSX.Element {
           console.log("Error reading redirect_path:", err)
         }
 
-        navigation.navigate("ListServicesOrder")
+        router.push("/ListServicesOrder")
       } else {
         Alert.alert("Verifique as credenciais se estão corretas e tente novamente.")
       }

@@ -1,20 +1,16 @@
 import React from "react"
-import { useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import { useRouter } from "expo-router"
 import { WithLocalSvg } from "react-native-svg/css"
 
 import { QRCodeButton } from "./styles"
 import { Container, TextButton, Logo } from "../../components/GlobalStyles/styles"
-import { StackParamList } from "../../routes/stack.routes"
-
-type authScreenProp = StackNavigationProp<StackParamList, "AuthenticationScreen">
 
 function Authentication(): JSX.Element {
-  const navigation = useNavigation<authScreenProp>()
+  const router = useRouter()
 
   const submit = async () => {
     try {
-      navigation.navigate("QRCode")
+      router.push("/QRCodeScanner")
     } catch (error) {
       console.log(error)
     }
@@ -24,7 +20,7 @@ function Authentication(): JSX.Element {
     <Container>
       <Logo source={require("../../assets/images/logo_econtrole_residuo4.png")} />
 
-      <QRCodeButton activeOpacity={0.5} onPress={() => submit()}>
+      <QRCodeButton style={({ pressed }) => pressed ? { opacity: 0.5 } : {}} onPress={() => submit()}>
         <WithLocalSvg
           width="65%"
           height="65%"

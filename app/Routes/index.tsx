@@ -26,6 +26,7 @@ interface TripGroup {
   orders: any[]
   collectionPoints: number
   totalDistance?: string
+  completionRate: number
 }
 
 function Routes(): JSX.Element {

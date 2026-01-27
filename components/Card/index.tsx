@@ -1,7 +1,6 @@
 import React, { useState } from "react"
 import { Text, View, TouchableOpacity } from "react-native"
-import { useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import { useRouter } from "expo-router"
 import { WithLocalSvg } from "react-native-svg/css"
 
 import {
@@ -13,12 +12,9 @@ import {
   CardContainer,
   BackgroundStatus,
 } from "./styles"
-import { StackParamList } from "../../routes/stack.routes"
-
-type ServicesOrderScreenProp = StackNavigationProp<StackParamList, "ListServicesOrder">
 
 function Card({ cardData }: { cardData: any[] }) {
-  const navigation = useNavigation<ServicesOrderScreenProp>()
+  const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(true)
 
   // Get voyage name from first order or use "Sem Viagem" if none
@@ -100,7 +96,7 @@ function Card({ cardData }: { cardData: any[] }) {
       {isExpanded && cardData?.map((order: any, index: number) => (
         <CardContainer 
           key={order.id || index} 
-          onPress={() => navigation.navigate("UpdateServicesOrder", order)}
+          onPress={() => router.push({ pathname: "/UpdateServicesOrder", params: { id: order.id } })}
         >
           <ContainerTitle>
             <Code>#{order.identifier || `OS-${order.id}`}</Code>

@@ -1,6 +1,6 @@
 import React from "react"
 import { View, TouchableOpacity, Text } from "react-native"
-import { useNavigation } from "@react-navigation/native"
+import { useRouter } from "expo-router"
 import { WithLocalSvg } from "react-native-svg/css"
 
 interface BottomNavigationProps {
@@ -8,14 +8,14 @@ interface BottomNavigationProps {
 }
 
 function BottomNavigation({ currentScreen }: BottomNavigationProps) {
-  const navigation = useNavigation()
+  const router = useRouter()
 
   const navigateToServicesOrder = () => {
-    navigation.navigate("ListServicesOrder")
+    router.push("/ListServicesOrder")
   }
 
   const navigateToRoutes = () => {
-    navigation.navigate("Routes")
+    router.push("/Routes")
   }
 
   return (
@@ -50,9 +50,6 @@ function BottomNavigation({ currentScreen }: BottomNavigationProps) {
           width={24}
           height={24}
           asset={require("../../assets/images/icons/factory.svg")}
-          style={{
-            tintColor: currentScreen === "ListServicesOrder" ? "#007AFF" : "#666",
-          }}
         />
         <Text
           style={{
@@ -80,9 +77,6 @@ function BottomNavigation({ currentScreen }: BottomNavigationProps) {
           width={24}
           height={24}
           asset={require("../../assets/images/icons/delivery-truck-silhouette.svg")}
-          style={{
-            tintColor: currentScreen === "Routes" ? "#007AFF" : "#666",
-          }}
         />
         <Text
           style={{

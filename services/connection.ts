@@ -1,7 +1,7 @@
 import axios from "axios"
 import uuid from "react-native-uuid"
 
-// import { getRealm } from "../databases/realm"
+// SQLite persistence is used instead of Realm
 import { insertCredentials, getCredentials as getSQLiteCredentials } from "../databases/database"
 import { headersTypes } from "../enums/headersTypes"
 import { HeadersTypes } from "../interfaces/HeadersTypes"
@@ -87,7 +87,7 @@ api.interceptors.response.use(
       }
       // Debug: log which auth headers are present (if any)
       try {
-        const present = Object.keys(h).filter((k) => [headersTypes.accessToken, headersTypes.client, headersTypes.uid].includes(k))
+        const present = Object.keys(h).filter((k) => ["access-token", "client", "uid"].includes(k))
         console.log('Response headers keys present for auth:', present)
       } catch (e) {
         // ignore
