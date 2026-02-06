@@ -25,11 +25,6 @@
           "cameraPermission": "Permita que o aplicativo acesse a câmera para tirar fotos para associar à ordem de serviço"
         }
       ]
-    ],
-    "permissions": [
-      "android.permission.CAMERA",
-      "android.permission.READ_EXTERNAL_STORAGE",
-      "android.permission.WRITE_EXTERNAL_STORAGE"
     ]
   }
 }

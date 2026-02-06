@@ -8,17 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "prebuildCommand": "npx expo prebuild --platform android --no-install"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "prebuildCommand": "npx expo prebuild --platform android --no-install"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "prebuildCommand": "npx expo prebuild --platform android --no-install"
+      }
     }
   },
   "submit": {
