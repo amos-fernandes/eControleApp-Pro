@@ -1,13 +1,16 @@
 import React, { useCallback, useState } from "react"
-import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator } from "react-native"
+import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator, Alert } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 import { useRouter, useLocalSearchParams } from "expo-router"
 
 import InfoConnection from "@/components/InfoConnection"
+import ImageUploader from "@/components/ImageUploader"
 import { ServiceInterface } from "@/interfaces/Service"
 import sendServiceOrder from "@/services/sendServiceOrder"
+import uploadImage from "@/services/uploadImage"
 import { getServiceOrder } from "@/services/servicesOrders"
 import checkConnection from "@/utils/checkConnection"
+import { insertServiceOrderImage, getServiceOrderImages } from "@/databases/database"
 
 import { AdditionalData } from "./Components/AdditionalData"
 import { Address } from "./Components/Address"
@@ -37,6 +40,7 @@ function UpdateServicesOrder(): JSX.Element {
   const [endKM, setEndKM] = useState("")
   const [certificate, setCertificate] = useState("")
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const connection: boolean = checkConnection()
   const arr: any = []
   let service_executions_local: any = []
@@ -148,26 +152,50 @@ function UpdateServicesOrder(): JSX.Element {
 
   const submit = async () => {
     setLoading(true)
-    const dataToSend: any = {
-      checking: true,
-      collected_equipment: equipmentsLeft,
-      lended_equipment: equipmentsCollected,
-      driver_observations: note,
-      arrival_date: arrivalDate,
-      departure_date: departureDate,
-      start_km: startKM,
-      end_km: endKM,
-      certificate_memo: certificate,
-      service_executions: serviceExecutions.length > 0 ? serviceExecutions : order.service_executions,
-    }
-
+    
     try {
+      // Upload de imagem se selecionada
+      let imageUrl = null
+      if (selectedImage) {
+        const uploadResponse: any = await uploadImage(selectedImage, order.id)
+        if (uploadResponse?.status === 200 && uploadResponse.data?.image_url) {
+          imageUrl = uploadResponse.data.image_url
+          // Armazenar a URL da imagem no banco de dados local
+          insertServiceOrderImage(order.id, imageUrl, selectedImage)
+        } else {
+          Alert.alert(
+            "Erro ao Upload de Imagem",
+            "Não foi possível fazer o upload da imagem. Tente novamente."
+          )
+          setLoading(false)
+          return
+        }
+      }
+
+      const dataToSend: any = {
+        checking: true,
+        collected_equipment: equipmentsLeft,
+        lended_equipment: equipmentsCollected,
+        driver_observations: note,
+        arrival_date: arrivalDate,
+        departure_date: departureDate,
+        start_km: startKM,
+        end_km: endKM,
+        certificate_memo: certificate,
+        service_executions: serviceExecutions.length > 0 ? serviceExecutions : order.service_executions,
+        image_url: imageUrl,
+      }
+
       const response: any = await sendServiceOrder(order.id, dataToSend)
       if (response.status === 200) {
         router.back()
       }
     } catch (error) {
       console.log("SUBMIT ERROR: ", error)
+      Alert.alert(
+        "Erro ao Enviar",
+        "Ocorreu um erro ao enviar os dados. Tente novamente."
+      )
     } finally {
       setLoading(false)
     }
@@ -254,23 +282,28 @@ function UpdateServicesOrder(): JSX.Element {
               title={"Hora de saida do cliente"}
               initialDate={departureDate ? new Date(departureDate) : new Date()}
             />
-            <AdditionalData
-              onChangeStart={setStartKM}
-              onChangeEnd={setEndKM}
-              onChangeCertificate={setCertificate}
-              startKM={startKM}
-              endKM={endKM}
-              certificate={certificate}
-            />
-            <CardContainer style={{ marginVertical: 10 }}>
-              <Button style={{ marginTop: 0, width: "100%" }} onPress={submit} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <TextButton>Salvar para conferencia</TextButton>
-                )}
-              </Button>
-            </CardContainer>
+             <ImageUploader
+               onImageSelected={setSelectedImage}
+               selectedImage={selectedImage}
+               onRemoveImage={() => setSelectedImage(null)}
+             />
+             <AdditionalData
+               onChangeStart={setStartKM}
+               onChangeEnd={setEndKM}
+               onChangeCertificate={setCertificate}
+               startKM={startKM}
+               endKM={endKM}
+               certificate={certificate}
+             />
+             <CardContainer style={{ marginVertical: 10 }}>
+               <Button style={{ marginTop: 0, width: "100%" }} onPress={submit} disabled={loading}>
+                 {loading ? (
+                   <ActivityIndicator color="#fff" />
+                 ) : (
+                   <TextButton>Salvar para conferencia</TextButton>
+                 )}
+               </Button>
+             </CardContainer>
           </Container>
         </ScrollView>
       ) : (

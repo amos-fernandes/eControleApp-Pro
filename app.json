@@ -16,6 +16,20 @@
       "eas": {
         "projectId": "13225def-48b3-4f7f-93a5-04bd1d720b18"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permita que o aplicativo acesse suas fotos para associar à ordem de serviço",
+          "cameraPermission": "Permita que o aplicativo acesse a câmera para tirar fotos para associar à ordem de serviço"
+        }
+      ]
+    ],
+    "permissions": [
+      "android.permission.CAMERA",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE"
+    ]
   }
 }

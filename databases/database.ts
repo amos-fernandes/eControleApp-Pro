@@ -56,7 +56,43 @@ export const initDatabase = () => {
       item_weights TEXT,
       FOREIGN KEY(service_order_id) REFERENCES service_orders(id)
     );
+
+    CREATE TABLE IF NOT EXISTS service_order_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      service_order_id INTEGER,
+      image_url TEXT,
+      image_path TEXT,
+      created_at TEXT,
+      FOREIGN KEY(service_order_id) REFERENCES service_orders(id)
+    );
   `)
+}
+
+/**
+ * Insere uma imagem associada a uma ordem de serviço.
+ */
+export const insertServiceOrderImage = (serviceOrderId: number, imageUrl: string, imagePath: string) => {
+    const db = getDB()
+    db.runSync(
+        'INSERT INTO service_order_images (service_order_id, image_url, image_path, created_at) VALUES (?, ?, ?, ?)',
+        [serviceOrderId, imageUrl, imagePath, new Date().toISOString()],
+    )
+}
+
+/**
+ * Obtém todas as imagens associadas a uma ordem de serviço.
+ */
+export const getServiceOrderImages = (serviceOrderId: number) => {
+    const db = getDB()
+    return db.getAllSync('SELECT * FROM service_order_images WHERE service_order_id = ?', [serviceOrderId])
+}
+
+/**
+ * Remove todas as imagens associadas a uma ordem de serviço.
+ */
+export const deleteServiceOrderImages = (serviceOrderId: number) => {
+    const db = getDB()
+    db.runSync('DELETE FROM service_order_images WHERE service_order_id = ?', [serviceOrderId])
 }
 
 /**
