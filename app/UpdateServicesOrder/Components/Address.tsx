@@ -4,7 +4,7 @@ import { TextButton } from "../../../components/GlobalStyles/styles"
 import { CardContainer, TextBold, Text, Header, Background, ContainerText, Button } from "../styles"
 
 export const Address = ({ address }: any) => {
-  const URL = `https://www.google.com.br/maps/@${address.latitude},${address.longitude},17z?hl=pt-PT`
+  const URL = `https://www.google.com/maps/search/?api=1&query=${address.latitude},${address.longitude}`
 
   return (
     <CardContainer style={{ marginTop: 20 }}>

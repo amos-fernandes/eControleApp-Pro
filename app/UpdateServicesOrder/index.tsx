@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react"
-import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator, Alert } from "react-native"
+import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator, Alert, Linking } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 import { useRouter, useLocalSearchParams } from "expo-router"
 
@@ -9,6 +9,7 @@ import { ServiceInterface } from "@/interfaces/Service"
 import sendServiceOrder from "@/services/sendServiceOrder"
 import uploadImage from "@/services/uploadImage"
 import { getServiceOrder } from "@/services/servicesOrders"
+import { emitMTR, downloadMTR, openMTRPDF } from "@/services/mtrService"
 import checkConnection from "@/utils/checkConnection"
 import { insertServiceOrderImage, getServiceOrderImages } from "@/databases/database"
 
@@ -150,9 +151,47 @@ function UpdateServicesOrder(): JSX.Element {
     }
   }
 
+  const emitMTRHandler = async () => {
+    if (!order || !order.id) {
+      Alert.alert("Erro", "Não foi possível identificar a ordem de serviço.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await emitMTR(order.id);
+      Alert.alert(
+        "MTR Emitida",
+        `MTR emitida com sucesso! ID: ${response.mtr_id}\nStatus: ${response.status}`,
+        [
+          {
+            text: "Abrir PDF",
+            onPress: async () => {
+              try {
+                await openMTRPDF(response.mtr_id);
+              } catch (error) {
+                console.error("Erro ao abrir MTR PDF:", error);
+                Alert.alert("Erro", "Não foi possível abrir o PDF da MTR. Tente novamente.");
+              }
+            }
+          },
+          { text: "OK" }
+        ]
+      );
+    } catch (error: any) {
+      console.error("Erro ao emitir MTR:", error);
+      Alert.alert(
+        "Erro",
+        error.message || "Ocorreu um erro ao emitir a MTR. Tente novamente."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submit = async () => {
     setLoading(true)
-    
+
     try {
       // Upload de imagem se selecionada
       let imageUrl = null
@@ -295,6 +334,15 @@ function UpdateServicesOrder(): JSX.Element {
                endKM={endKM}
                certificate={certificate}
              />
+             <CardContainer style={{ marginVertical: 10 }}>
+               <Button style={{ marginTop: 0, width: "100%", backgroundColor: "#FFA500" }} onPress={emitMTRHandler} disabled={loading}>
+                 {loading ? (
+                   <ActivityIndicator color="#fff" />
+                 ) : (
+                   <TextButton>Emitir MTR</TextButton>
+                 )}
+               </Button>
+             </CardContainer>
              <CardContainer style={{ marginVertical: 10 }}>
                <Button style={{ marginTop: 0, width: "100%" }} onPress={submit} disabled={loading}>
                  {loading ? (

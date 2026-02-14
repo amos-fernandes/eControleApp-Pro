@@ -120,13 +120,15 @@ function Routes(): JSX.Element {
     const tripGroups: { [key: string]: any[] } = {}
 
     orders.forEach(order => {
-      // Try to get trip/voyage name
+      // Try to get trip/voyage name and date
       const tripName = order.voyage?.name || "Viagens sem Agrupamento"
-      
-      if (!tripGroups[tripName]) {
-        tripGroups[tripName] = []
+      const routeDate = order?.route_date || order?.voyage?.date || null
+      const groupName = routeDate ? `${tripName} (${new Date(routeDate).toLocaleDateString('pt-BR')})` : tripName
+
+      if (!tripGroups[groupName]) {
+        tripGroups[groupName] = []
       }
-      
+
       // Add collection route information if available
       const enhancedOrder = {
         ...order,
@@ -135,17 +137,17 @@ function Routes(): JSX.Element {
         estimatedDistance: order.estimated_distance || null,
         serviceTime: order.estimated_service_time || null
       }
-      
-      tripGroups[tripName].push(enhancedOrder)
+
+      tripGroups[groupName].push(enhancedOrder)
     })
 
     // Convert to TripGroup format with additional metrics
-    return Object.entries(tripGroups).map(([tripName, orders]) => {
+    return Object.entries(tripGroups).map(([groupName, orders]) => {
       const collectionPoints = orders.filter(order => order.hasCollectionPoints).length
       const totalOrders = orders.length
-      
+
       return {
-        tripName,
+        tripName: groupName,
         orders,
         collectionPoints,
         totalDistance: calculateTotalDistance(orders),
@@ -264,11 +266,11 @@ function Routes(): JSX.Element {
                 </Text>
               </View>
             </View>
-            
+
             <Text style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
               {order.customer?.name || "Cliente não informado"}
             </Text>
-            
+
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
               <Text style={{ fontSize: 11, color: "#999" }}>
                 📍 {order.address?.to_s || "Endereço não informado"}
@@ -281,7 +283,7 @@ function Routes(): JSX.Element {
             </View>
           </View>
         ))}
-        
+
         {item.orders.length > 3 && (
           <Text style={{ fontSize: 12, color: "#007AFF", textAlign: "center", marginTop: 8 }}>
             ... e mais {item.orders.length - 3} ordens

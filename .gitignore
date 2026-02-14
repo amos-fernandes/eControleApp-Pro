@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-
+package-lock.json
 # Expo
 .expo/
 .expo-shared/
@@ -10,10 +10,12 @@ web-build/
 # Native
 /android
 /ios
-
+/.idea/
+.idea/
+.vscode/
 # Metro
 .metro-health-check*
-
+/scripts/test_*
 # debug
 npm-debug.*
 yarn-debug.*
@@ -28,3 +30,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+.idea/work*.xml
+.idea/cache/device*.xml

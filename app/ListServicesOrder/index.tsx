@@ -124,23 +124,29 @@ function ListServicesOrder(): JSX.Element {
     fetchOrders(filters)
   }
 
-  // Group orders by voyage (defensive: ensure `orders` is an array)
+  // Group orders by voyage and route date (defensive: ensure `orders` is an array)
   const groupOrdersByVoyage = (orders: any[]) => {
     if (!Array.isArray(orders)) return {}
     const grouped = orders.reduce((acc, order) => {
-      const voyageName =
-        order?.voyage?.name ||
-        order?.voyage_name ||
-        order?.voyageName ||
-        (order?.voyage && typeof order.voyage === 'string' ? order.voyage : null) ||
-        order?.voyage_id ||
-        order?.route_name ||
-        order?.identifier ||
-        "Viagem"
-      if (!acc[voyageName]) {
-        acc[voyageName] = []
+      // Try to get voyage name with priority
+      const voyageName = order?.voyage?.name || 
+                         order?.voyage_name || 
+                         order?.voyageName || 
+                         (order?.voyage && typeof order.voyage === 'string' ? order.voyage : null) ||
+                         order?.voyage_id ||
+                         order?.route_name ||
+                         "Sem Viagem"
+      
+      // Try to get route date if available
+      const routeDate = order?.route_date || order?.voyage?.date || order?.service_date || null
+      
+      // Create a combined key with voyage name and date if available
+      const groupName = routeDate ? `${voyageName} (${new Date(routeDate).toLocaleDateString('pt-BR')})` : voyageName
+      
+      if (!acc[groupName]) {
+        acc[groupName] = []
       }
-      acc[voyageName].push(order)
+      acc[groupName].push(order)
       return acc
     }, {} as Record<string, any[]>)
     return grouped

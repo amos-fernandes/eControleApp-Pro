@@ -17,6 +17,7 @@
     "@types/crypto-js": "^4.2.2",
     "axios": "^1.7.9",
     "crypto-js": "^4.2.0",
+    "eas-cli": "^18.0.1",
     "expo": "~51.0.24",
     "expo-camera": "~15.0.16",
     "expo-constants": "~16.0.2",

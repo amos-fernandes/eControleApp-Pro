@@ -65,6 +65,17 @@ export const initDatabase = () => {
       created_at TEXT,
       FOREIGN KEY(service_order_id) REFERENCES service_orders(id)
     );
+
+    CREATE TABLE IF NOT EXISTS mtrs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      service_order_id INTEGER,
+      mtr_id TEXT UNIQUE,
+      status TEXT,
+      emission_date TEXT,
+      download_path TEXT,
+      created_at TEXT,
+      FOREIGN KEY(service_order_id) REFERENCES service_orders(id)
+    );
   `)
 }
 
@@ -184,11 +195,46 @@ export const getCredentials = () => {
 }
 
 /**
+ * Insere ou atualiza uma MTR emitida.
+ */
+export const insertMTR = (serviceOrderId: number, mtrId: string, status: string, emissionDate?: string) => {
+    const db = getDB()
+    db.runSync(
+        'INSERT OR REPLACE INTO mtrs (service_order_id, mtr_id, status, emission_date, created_at) VALUES (?, ?, ?, ?, ?)',
+        [serviceOrderId, mtrId, status, emissionDate || new Date().toISOString(), new Date().toISOString()],
+    )
+}
+
+/**
+ * Obtém as MTRs emitidas para uma ordem de serviço específica.
+ */
+export const getMTRsByServiceOrder = (serviceOrderId: number) => {
+    const db = getDB()
+    return db.getAllSync('SELECT * FROM mtrs WHERE service_order_id = ?', [serviceOrderId])
+}
+
+/**
+ * Obtém uma MTR específica pelo ID.
+ */
+export const getMTRById = (mtrId: string) => {
+    const db = getDB()
+    return db.getFirstSync('SELECT * FROM mtrs WHERE mtr_id = ?', [mtrId])
+}
+
+/**
+ * Atualiza o status de uma MTR.
+ */
+export const updateMTRStatus = (mtrId: string, status: string) => {
+    const db = getDB()
+    db.runSync('UPDATE mtrs SET status = ?, created_at = ? WHERE mtr_id = ?', [status, new Date().toISOString(), mtrId])
+}
+
+/**
  * Limpa todos os dados locais.
  */
 export const clearDatabase = () => {
     const db = getDB()
     db.execSync(
-        'DELETE FROM service_orders; DELETE FROM service_executions; DELETE FROM credentials; DELETE FROM users;',
+        'DELETE FROM service_orders; DELETE FROM service_executions; DELETE FROM credentials; DELETE FROM users; DELETE FROM mtrs;',
     )
 }
