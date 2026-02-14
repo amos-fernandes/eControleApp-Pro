@@ -17,7 +17,7 @@ const dateFormat = "YYYY-MM-DD"
 
 export const useFilterServiceOrderStore = create<FilterServiceOrderState>((set) => ({
   filters: {
-    status: "acting",
+    status: "all",
     so_type: "all",
     start_date: moment().subtract(2, "month").format(dateFormat),
     end_date: moment().add(1, "day").format(dateFormat),
@@ -30,7 +30,7 @@ export const useFilterServiceOrderStore = create<FilterServiceOrderState>((set) 
   resetFilters: () =>
     set({
       filters: {
-        status: "acting",
+        status: "all",
         so_type: "all",
         start_date: moment().subtract(2, "month").format(dateFormat),
         end_date: moment().add(1, "day").format(dateFormat),

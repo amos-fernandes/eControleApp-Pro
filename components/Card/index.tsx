@@ -108,8 +108,8 @@ function Card({ cardData }: { cardData: any[] }) {
 
       {/* Service Orders */}
       {isExpanded && cardData?.map((order: any, index: number) => (
-        <CardContainer 
-          key={order.id || index} 
+        <CardContainer
+          key={order.id || index}
           onPress={() => navigation.navigate("UpdateServicesOrder", order)}
         >
           <ContainerTitle>
@@ -124,7 +124,7 @@ function Card({ cardData }: { cardData: any[] }) {
               </BackgroundStatus>
             </ContainerStatus>
           </ContainerTitle>
-          
+
           <View>
             <ContainerTitle style={{ marginTop: 10 }}>
               {WithLocalSvg ? (
@@ -137,7 +137,7 @@ function Card({ cardData }: { cardData: any[] }) {
               </Description>
             </ContainerTitle>
           </View>
-          
+
           <View>
             <ContainerTitle style={{ marginTop: 10 }}>
               {WithLocalSvg ? (
@@ -151,13 +151,11 @@ function Card({ cardData }: { cardData: any[] }) {
             </ContainerTitle>
           </View>
 
-          {(order.service_date || cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date) && (
+          {order.service_date && (
             <View>
               <ContainerTitle style={{ marginTop: 10 }}>
                 <Text style={{ fontSize: 12, color: "#666" }}>
-                  📅 Data: {(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date) ? 
-                    new Date(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date).toLocaleDateString('pt-BR') : 
-                    new Date(order.service_date).toLocaleDateString('pt-BR')}
+                  📅 Data: {new Date(order.service_date).toLocaleDateString('pt-BR')}
                 </Text>
               </ContainerTitle>
             </View>

@@ -144,23 +144,21 @@ function Routes(): JSX.Element {
       routeMap[routeName].push(enhancedOrder)
     })
 
-    // For each route, group orders by voyage/trip and date
+    // For each route, group orders by voyage/trip
     const routeGroups: RouteGroup[] = Object.entries(routeMap).map(([routeName, ordersForRoute]) => {
       const tripMap: { [key: string]: any[] } = {}
       ordersForRoute.forEach(o => {
-        // Try to get trip/voyage name and date
+        // Try to get trip/voyage name
         const tripName = o.voyage?.name || 'Sem Viagem'
-        const routeDate = o?.route_date || o?.voyage?.date || null
-        const groupName = routeDate ? `${tripName} (${new Date(routeDate).toLocaleDateString('pt-BR')})` : tripName
         
-        if (!tripMap[groupName]) tripMap[groupName] = []
-        tripMap[groupName].push(o)
+        if (!tripMap[tripName]) tripMap[tripName] = []
+        tripMap[tripName].push(o)
       })
 
-      const voyages: VoyageGroup[] = Object.entries(tripMap).map(([groupName, voyageOrders]) => {
+      const voyages: VoyageGroup[] = Object.entries(tripMap).map(([tripName, voyageOrders]) => {
         const collectionPoints = voyageOrders.filter((order: any) => order.hasCollectionPoints).length
         return {
-          tripName: groupName,
+          tripName,
           orders: voyageOrders,
           collectionPoints,
           totalDistance: calculateTotalDistance(voyageOrders),

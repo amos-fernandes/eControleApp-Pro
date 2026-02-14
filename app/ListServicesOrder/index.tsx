@@ -109,7 +109,7 @@ function ListServicesOrder(): JSX.Element {
     fetchOrders(filters)
   }
 
-  // Group orders by voyage and route date (defensive: ensure `orders` is an array)
+  // Group orders by voyage (defensive: ensure `orders` is an array)
   const groupOrdersByVoyage = (orders: any[]) => {
     if (!Array.isArray(orders)) return {}
     const grouped = orders.reduce((acc, order) => {
@@ -122,16 +122,10 @@ function ListServicesOrder(): JSX.Element {
                          order?.route_name ||
                          "Sem Viagem"
       
-      // Try to get route date if available
-      const routeDate = order?.route_date || order?.voyage?.date || order?.service_date || null
-      
-      // Create a combined key with voyage name and date if available
-      const groupName = routeDate ? `${voyageName} (${new Date(routeDate).toLocaleDateString('pt-BR')})` : voyageName
-      
-      if (!acc[groupName]) {
-        acc[groupName] = []
+      if (!acc[voyageName]) {
+        acc[voyageName] = []
       }
-      acc[groupName].push(order)
+      acc[voyageName].push(order)
       return acc
     }, {} as Record<string, any[]>)
     return grouped
