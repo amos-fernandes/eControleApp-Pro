@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Text, View, TouchableOpacity, Platform, Image } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import { StackNavigationProp } from "@react-navigation/stack"
+import { NativeStackNavigationProp } from "@react-navigation/native-stack"
 
 let WithLocalSvg: any = null
 if (Platform.OS !== 'web') {
@@ -23,7 +23,7 @@ import {
 } from "./styles"
 import { StackParamList } from "../../routes/stack.routes"
 
-type ServicesOrderScreenProp = StackNavigationProp<StackParamList, "ListServicesOrder">
+type ServicesOrderScreenProp = NativeStackNavigationProp<StackParamList, "ListServicesOrder">
 
 function Card({ cardData }: { cardData: any[] }) {
   const navigation = useNavigation<ServicesOrderScreenProp>()
