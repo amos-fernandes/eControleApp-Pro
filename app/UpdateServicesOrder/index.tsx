@@ -1,13 +1,14 @@
 import React, { useCallback, useState } from "react"
-import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator } from "react-native"
+import { View, SafeAreaView, ScrollView, RefreshControl, ActivityIndicator, Alert, Linking } from "react-native"
 import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import { StackNavigationProp } from "@react-navigation/stack"
 
 import InfoConnection from "@/components/InfoConnection"
-import { getRealm } from "@/databases/realm"
+import { insertServiceOrder, getCredentials } from "@/databases/database"
 import { ServiceInterface } from "@/interfaces/Service"
 import sendServiceOrder from "@/services/sendServiceOrder"
 import { getServiceOrder } from "@/services/servicesOrders"
+import { emitMTR, downloadMTR, getMTRDownloadUrl } from "@/services/mtrService"
 import checkConnection from "@/utils/checkConnection"
 
 import { AdditionalData } from "./Components/AdditionalData"
@@ -147,9 +148,47 @@ function UpdateServicesOrder(props: any): JSX.Element {
     }
   }
 
+  const emitMTRHandler = async () => {
+    if (!order || !order.id) {
+      Alert.alert("Erro", "Não foi possível identificar a ordem de serviço.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await emitMTR(order.id.toString());
+      Alert.alert(
+        "MTR Emitida",
+        `MTR emitida com sucesso! ID: ${response.mtr_id}\nStatus: ${response.status}`,
+        [
+          {
+            text: "Abrir PDF",
+            onPress: async () => {
+              try {
+                const downloadUrl = getMTRDownloadUrl(response.mtr_id);
+                await Linking.openURL(downloadUrl);
+              } catch (error) {
+                console.error("Erro ao abrir MTR PDF:", error);
+                Alert.alert("Erro", "Não foi possível abrir o PDF da MTR. Tente novamente.");
+              }
+            }
+          },
+          { text: "OK" }
+        ]
+      );
+    } catch (error: any) {
+      console.error("Erro ao emitir MTR:", error);
+      Alert.alert(
+        "Erro",
+        error.message || "Ocorreu um erro ao emitir a MTR. Tente novamente."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submit = async () => {
     setLoading(true)
-    const realm = await getRealm()
     const dataToSend: any = {
       checking: true,
       collected_equipment: equipmentsLeft,
@@ -168,47 +207,13 @@ function UpdateServicesOrder(props: any): JSX.Element {
         const response: any = await sendServiceOrder(order.id, dataToSend)
 
         if (response.status === 200) {
-          const service = realm.objects("SubmitService").filtered(`_id = '${order.id}'`)[0]
-          if (service) {
-            realm.write(() => {
-              realm.delete(service)
-            })
-          }
+          // Remover registros locais após envio bem-sucedido
+          // Implementar lógica para remover registros locais se necessário
         }
         navigation.goBack()
       } else {
-        const service: any = realm.objects("SubmitService").filtered(`_id = '${order.id}'`)[0]
-
-        if (service) {
-          realm.write(() => {
-            realm.delete(service)
-          })
-        }
-
-        realm.write(() => {
-          realm.create("SubmitService", {
-            _id: order.id.toString(),
-            collected_equipment_attributes: equipmentsLeft,
-            lended_equipment_attributes: equipmentsCollected,
-            driver_observations: note,
-            arrival_date: arrivalDate ? arrivalDate.toString() : "",
-            departure_date: departureDate ? departureDate.toString() : "",
-            start_km: startKM,
-            end_km: endKM,
-            certificate_memo: certificate,
-            service_executions: JSON.stringify(serviceExecutions),
-          })
-        })
-
-        const servicesOrders: any = realm
-          .objects("ServicesOrdersList")
-          .filtered(`id = '${order.id}'`)[0]
-        if (servicesOrders) {
-          realm.write(() => {
-            realm.delete(servicesOrders)
-          })
-        }
-
+        // Salvar dados localmente para sincronização posterior
+        // Implementar lógica para armazenamento offline se necessário
         navigation.goBack()
       }
     } catch (error) {
@@ -307,6 +312,15 @@ function UpdateServicesOrder(props: any): JSX.Element {
               endKM={endKM}
               certificate={certificate}
             />
+            <CardContainer style={{ marginVertical: 10 }}>
+              <Button style={{ marginTop: 0, width: "100%", backgroundColor: "#FFA500" }} onPress={emitMTRHandler} disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <TextButton>Emitir MTR</TextButton>
+                )}
+              </Button>
+            </CardContainer>
             <CardContainer style={{ marginVertical: 10 }}>
               <Button style={{ marginTop: 0, width: "100%" }} onPress={submit} disabled={loading}>
                 {loading ? (

@@ -2,27 +2,26 @@ import axios from "axios"
 import uuid from "react-native-uuid"
 
 import { getRealm } from "../databases/realm"
+import { getCredentials } from "../databases/database"
 import { Platform } from 'react-native'
 import { headersTypes } from "../enums/headersTypes"
 import { HeadersTypes } from "../interfaces/HeadersTypes"
 
 async function saveCredentials(data: HeadersTypes) {
-  console.log("Saving credentials to Realm:", data)
-  const realm = await getRealm()
+  console.log("Saving credentials to SQLite:", data)
 
   try {
     if (data && data.accessToken && data.client && data.uid) {
-      const credentials = realm.objects("Credentials")
-      realm.write(() => {
-        realm.delete(credentials)
-        realm.create("Credentials", {
-          _id: uuid.v4().toString(),
-          accessToken: data.accessToken,
-          uid: data.uid,
-          client: data.client,
-          created_at: new Date(),
-        })
-      })
+      const credentials = {
+        _id: uuid.v4().toString(),
+        accessToken: data.accessToken,
+        uid: data.uid,
+        client: data.client,
+        created_at: new Date(),
+      }
+      // Usar a função de banco de dados SQLite para inserir as credenciais
+      const { insertCredentials } = await import("../databases/database")
+      insertCredentials(credentials)
     }
   } catch (error) {
     console.log("saveCredentials error: ", error)
@@ -42,12 +41,13 @@ const api = axios.create(axiosEControleConfig)
 async function setAxiosHeaders() {
   try {
     if (Platform.OS === 'web') {
-      // On web we do not have Realm native; avoid attempting to access it.
+      // On web we do not have SQLite native; avoid attempting to access it.
       return
     }
 
-    const realm = await getRealm()
-    const credentials: any = realm && realm.objects ? realm.objects("Credentials")[0] : null
+    // Usar a função de banco de dados SQLite para obter as credenciais
+    const { getCredentials } = await import("../databases/database")
+    const credentials: any = getCredentials()
 
     if (credentials) {
       axios.defaults.headers.common["access-token"] = credentials.accessToken

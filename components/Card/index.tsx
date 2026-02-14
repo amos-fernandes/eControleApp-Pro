@@ -151,11 +151,13 @@ function Card({ cardData }: { cardData: any[] }) {
             </ContainerTitle>
           </View>
 
-          {order.service_date && (
+          {(order.service_date || cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date) && (
             <View>
               <ContainerTitle style={{ marginTop: 10 }}>
                 <Text style={{ fontSize: 12, color: "#666" }}>
-                  📅 Data: {new Date(order.service_date).toLocaleDateString('pt-BR')}
+                  📅 Data: {(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date) ? 
+                    new Date(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date).toLocaleDateString('pt-BR') : 
+                    new Date(order.service_date).toLocaleDateString('pt-BR')}
                 </Text>
               </ContainerTitle>
             </View>
