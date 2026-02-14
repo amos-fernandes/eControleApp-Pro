@@ -1,15 +1,18 @@
 import api from "./connection"
 import reconnect from "./reconnect"
 import { retrieveDomain } from "./retrieveUserSession"
-import { getRealm } from "../databases/realm"
+import { getCredentials } from "../databases/database"
 import { ResponseInterface } from "../interfaces/Response"
 
 const sendServiceOrder = async (id: string, data: any): Promise<ResponseInterface | undefined> => {
-  const realm = await getRealm()
   const URL = await retrieveDomain()
 
   try {
-    const credentials: any = realm.objects("Credentials")[0]
+    const credentials: any = getCredentials()
+    if (!credentials || !credentials.accessToken) {
+      throw new Error("NO_CREDENTIALS")
+    }
+    
     const params = {
       "access-token": credentials.accessToken,
       "client": credentials.client,
@@ -31,8 +34,6 @@ const sendServiceOrder = async (id: string, data: any): Promise<ResponseInterfac
       return { status: 403, data: "" }
     }
     reconnect()
-  } finally {
-    // realm.close();
   }
 }
 

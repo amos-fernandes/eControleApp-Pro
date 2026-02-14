@@ -1,14 +1,17 @@
 import api from "./connection"
 import reconnect from "./reconnect"
 import { retrieveDomain } from "./retrieveUserSession"
-import { getRealm } from "../databases/realm"
+import { getCredentials } from "../databases/database"
 
 const getVoyages = async () => {
-  const realm = await getRealm()
   const URL = await retrieveDomain()
 
   try {
-    const credentials: any = realm.objects("Credentials")[0]
+    const credentials: any = getCredentials()
+    if (!credentials || !credentials.accessToken) {
+      throw new Error("NO_CREDENTIALS")
+    }
+    
     const params = {
       "access-token": credentials.accessToken,
       "client": credentials.client,
@@ -16,14 +19,12 @@ const getVoyages = async () => {
     }
 
     const response = await api.get(`${URL.data}/operations/voyages`, { params })
-    //Pegar a resposta e salvar no realmDB
+    // Os dados podem ser armazenados localmente no SQLite se necessário
 
     return response.data
   } catch (error: any) {
     console.log(error)
     // reconnect()
-  } finally {
-    // realm.close();
   }
 }
 

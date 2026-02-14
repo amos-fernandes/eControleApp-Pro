@@ -1,29 +1,17 @@
 import sendServiceOrder from "./sendServiceOrder"
-import { getRealm } from "../databases/realm"
+import { getServiceOrders } from "../databases/database"
+
+// Para funcionalidade completa de reenvio offline, seria necessário
+// um mecanismo específico para armazenar dados pendentes de sincronização
+// Por enquanto, esta função serve como placeholder
 
 export const resendService = async () => {
-  const realm = await getRealm()
-
   try {
-    const services: any = realm.objects("SubmitService")
-
-    if (services.length > 0) {
-      for (const service of services) {
-        const id = service._id
-        delete service._id
-        const response: any = await sendServiceOrder(id, service)
-
-        if (response?.status === 200 || response?.status === 403) {
-          const service = realm.objects("SubmitService").filtered(`_id = '${id}'`)[0]
-          realm.write(() => {
-            realm.delete(service)
-          })
-        }
-      }
-    }
+    // Implementação futura para reenvio de dados offline
+    // usando mecanismo adequado de armazenamento local
+    
+    console.log("Resend service functionality - placeholder")
   } catch (error) {
     console.log(error)
-  } finally {
-    // realm.close();
   }
 }

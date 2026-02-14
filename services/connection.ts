@@ -1,8 +1,6 @@
 import axios from "axios"
 import uuid from "react-native-uuid"
 
-import { getRealm } from "../databases/realm"
-import { getCredentials } from "../databases/database"
 import { Platform } from 'react-native'
 import { headersTypes } from "../enums/headersTypes"
 import { HeadersTypes } from "../interfaces/HeadersTypes"

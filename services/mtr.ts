@@ -1,13 +1,11 @@
 import api from "./connection"
 import { retrieveDomain } from "./retrieveUserSession"
-import { getRealm } from "../databases/realm"
+import { getCredentials } from "../databases/database"
 
 export const generateMTR = async (orderId: number, photoUri: string | null, metadata: any = {}) => {
-  const realm = await getRealm()
   const URL = await retrieveDomain()
 
-  if (!realm || typeof realm.objects !== "function") throw new Error("LOCAL_DB_UNAVAILABLE")
-  const credentials: any = realm.objects("Credentials")[0] || null
+  const credentials: any = getCredentials()
   if (!credentials || !credentials.accessToken) throw new Error("NO_CREDENTIALS")
 
   const formData = new FormData()

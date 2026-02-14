@@ -16,7 +16,7 @@ export default function RootLayout() {
     const initializeApp = async () => {
       console.log("ROOT_LAYOUT_EFFECT: Initializing Database...")
       try {
-        // Initialize local database schema (Realm)
+        // Initialize local database schema (SQLite)
         await initDatabase()
         console.log("ROOT_LAYOUT_EFFECT: DB Initialized")
       } catch (error) {
