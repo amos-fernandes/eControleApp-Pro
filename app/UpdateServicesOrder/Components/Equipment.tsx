@@ -25,8 +25,8 @@ export const Equipment = ({ customerId, onChangeLeft, onChangeCollected }: any) 
     if (connection) {
       equipmentLeftInClientArr = await getEquipamentsLeft(customerId, true)
     } else {
-      // Para modo offline, podemos armazenar localmente os equipamentos
-      // mas por enquanto vamos apenas tratar como online
+      // Para modo offline, posso armazenar localmente os equipamentos
+      // mas por enquanto trato apenas como online
       equipmentLeftInClientArr = await getEquipamentsLeft(customerId, false)
     }
 
@@ -45,8 +45,8 @@ export const Equipment = ({ customerId, onChangeLeft, onChangeCollected }: any) 
     if (connection) {
       equipmentCollectedInClientArr = await getEquipamentsCollected(customerId, false)
     } else {
-      // Para modo offline, podemos armazenar localmente os equipamentos
-      // mas por enquanto vamos apenas tratar como online
+      // Para modo offline, posso armazenar localmente os equipamentos
+      // mas por enquanto trato apenas como online
       equipmentCollectedInClientArr = await getEquipamentsCollected(customerId, false)
     }
 

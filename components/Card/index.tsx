@@ -29,7 +29,7 @@ function Card({ cardData }: { cardData: any[] }) {
   const navigation = useNavigation<ServicesOrderScreenProp>()
   const [isExpanded, setIsExpanded] = useState(true)
 
-  // Get voyage name from first order or use "Sem Viagem" if none
+  // Obtenho o nome da viagem da primeira ordem ou uso "Sem Viagem" se não houver
   const voyageName = cardData?.[0]?.voyage?.name || "Sem Viagem"
   const orderCount = cardData?.length || 0
 

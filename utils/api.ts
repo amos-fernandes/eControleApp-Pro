@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-// TODO: Replace with actual API base URL
+// TODO: Substituir pela URL base real da API
 const API_BASE_URL = 'https://api.example.com'
 
 const api = axios.create({
@@ -11,10 +11,10 @@ const api = axios.create({
   },
 })
 
-// Add request interceptor for authentication if needed
+// Adiciono interceptor de requisição para autenticação se necessário
 api.interceptors.request.use(
   (config) => {
-    // Add auth token if available
+    // Adiciono token de autenticação se disponível
     // const token = await GetDataFromSecureStore('token')
     // if (token) {
     //   config.headers.Authorization = `Bearer ${token}`
@@ -26,15 +26,15 @@ api.interceptors.request.use(
   }
 )
 
-// Add response interceptor for error handling
+// Adiciono interceptor de resposta para tratamento de erros
 api.interceptors.response.use(
   (response) => {
     return response
   },
   (error) => {
-    // Handle common errors
+    // Trato erros comuns
     if (error.response?.status === 401) {
-      // Handle unauthorized
+      // Trato não autorizado
     }
     return Promise.reject(error)
   }

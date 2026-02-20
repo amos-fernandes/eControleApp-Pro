@@ -39,17 +39,17 @@ function QRCode(): JSX.Element {
           if (decoded) extracted = decoded
         }
       } catch (err) {
-        // data pode não ser uma URL completa — ignore
+        // data pode não ser uma URL completa — ignoro
       }
 
-      // Normaliza: remove espaços e quebras
+      // Normalizo: removo espaços e quebras
       extracted = extracted.trim()
 
-      // Se for uma URL completa, extraia origin e possível redirect_url
+      // Se for uma URL completa, extraio origin e possível redirect_url
       try {
         const u = new URL(extracted)
 
-        // If the scanned URL is already the target host, save immediately
+        // Se a URL escaneada já é o host alvo, salvo imediatamente
         if (u.hostname.includes("econtrole.com")) {
           const origin = u.origin
           await SaveDataToSecureStore("domain", JSON.stringify({ domain: origin }))
@@ -59,7 +59,7 @@ function QRCode(): JSX.Element {
             await SaveDataToSecureStore("redirect_path", decoded)
           }
         } else {
-          // For known wrapper/shortener hosts, attempt to resolve synchronously with timeout
+          // Para hosts conhecidos de wrapper/shortener, tento resolver sincronamente com timeout
           const wrapperRegex = /qr-code-generator|qrco\.de|bit\.ly|tinyurl|support\.qr-code-generator|go\.qr-code-generator/gi
           if (wrapperRegex.test(u.hostname)) {
             const controller = new AbortController()
@@ -78,7 +78,7 @@ function QRCode(): JSX.Element {
                 }
                 console.log("QRCode resolution: updated domain to final origin", finalOrigin)
               } else {
-                // If redirect didn't expose final host, try to inspect HTML for the final link
+                // Se o redirect não expôs o host final, tento inspecionar o HTML pelo link final
                 try {
                   const text = await resp.text()
                   const m = text.match(/https?:\/\/(?:[\w.-]*\.)?econtrole\.com[\S]*/i)
@@ -102,11 +102,11 @@ function QRCode(): JSX.Element {
               }
             } catch (e) {
               clearTimeout(timeout)
-              // resolving failed (cloudflare/challenge) — fallback to saving scanned origin
+              // falha na resolução (cloudflare/challenge) — faço fallback salvando a origin escaneada
               await SaveDataToSecureStore("domain", JSON.stringify({ domain: u.origin }))
             }
           } else {
-            // Non-wrapper host: save origin as-is
+            // Host não-wrapper: salvo a origin como está
             await SaveDataToSecureStore("domain", JSON.stringify({ domain: u.origin }))
             const redirectParam = u.searchParams.get("redirect_url")
             if (redirectParam) {
@@ -116,11 +116,11 @@ function QRCode(): JSX.Element {
           }
         }
       } catch (err) {
-        // Não é uma URL completa — mantenha comportamento anterior
+        // Não é uma URL completa — mantenho comportamento anterior
         await SaveDataToSecureStore("domain", JSON.stringify({ domain: extracted }))
       }
 
-      // Após salvar domínio/redirect, navegue para a tela de Login
+      // Após salvar domínio/redirect, navego para a tela de Login
       console.log("handleBarCodeScanned: domain saved")
       navigation.navigate("Login")
     } catch (err) {

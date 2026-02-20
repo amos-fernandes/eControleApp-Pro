@@ -3,7 +3,6 @@ node_modules
 .qodo
 .idea
 .expo
-/android
 /SEAL
 /scripts/test*.js
 package_lock.json

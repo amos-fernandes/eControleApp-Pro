@@ -64,7 +64,7 @@ function Routes(): JSX.Element {
           console.log("fetchTrips response.data (non-object)")
         }
       }
-      // Normalize response shapes (axios response, wrapped data, etc.)
+      // Normalizo os formatos de resposta (axios response, wrapped data, etc.)
       let ordersData: any[] = []
       if (!response) {
         ordersData = []
@@ -124,7 +124,7 @@ function Routes(): JSX.Element {
     fetchTrips(filters)
   }
 
-  // Group first by route (collection route / route.name) then by trip/voyage
+  // Agrupo primeiro por rota (collection route / route.name) depois por viagem/voyage
   const groupOrdersByRouteAndTrips = (orders: any[]): RouteGroup[] => {
     if (!Array.isArray(orders)) {
       console.log('groupOrdersByRouteAndTrips received non-array orders:', orders)
@@ -144,11 +144,11 @@ function Routes(): JSX.Element {
       routeMap[routeName].push(enhancedOrder)
     })
 
-    // For each route, group orders by voyage/trip
+    // Para cada rota, agrupo ordens por viagem/trip
     const routeGroups: RouteGroup[] = Object.entries(routeMap).map(([routeName, ordersForRoute]) => {
       const tripMap: { [key: string]: any[] } = {}
       ordersForRoute.forEach(o => {
-        // Try to get trip/voyage name
+        // Tento obter o nome da viagem/voyage
         const tripName = o.voyage?.name || 'Sem Viagem'
         
         if (!tripMap[tripName]) tripMap[tripName] = []
@@ -186,7 +186,7 @@ function Routes(): JSX.Element {
     return Math.round((completedOrders / orders.length) * 100)
   }
 
-  // Render a route box containing voyages
+  // Renderizo uma caixa de rota contendo viagens
   const renderRouteItem = ({ item }: { item: RouteGroup }) => (
     <View style={{ width: "100%", marginBottom: 20 }}>
       <View style={{ backgroundColor: "#0057b8", borderRadius: 12, padding: 12, marginBottom: 10 }}>

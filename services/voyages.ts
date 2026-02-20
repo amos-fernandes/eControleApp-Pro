@@ -19,7 +19,7 @@ const getVoyages = async () => {
     }
 
     const response = await api.get(`${URL.data}/operations/voyages`, { params })
-    // Os dados podem ser armazenados localmente no SQLite se necessário
+    // Os dados podem ser armazenados localmente no SQLite se eu precisar
 
     return response.data
   } catch (error: any) {

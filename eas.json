@@ -15,6 +15,11 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "CETESB_CPF": "01442881178",
+        "CETESB_SENHA": "devtesteeco",
+        "CETESB_UNIDADE": "19033"
       }
     },
     "production": {

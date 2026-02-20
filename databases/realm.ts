@@ -1,5 +1,5 @@
 // Arquivo mantido para compatibilidade com códigos legados
-// Redireciona para a função getDB do database.ts
+// Redireciono para a função getDB do database.ts
 import { getDB } from './database';
 
 export const getRealm = async () => {

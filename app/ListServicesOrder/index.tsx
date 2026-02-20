@@ -33,7 +33,7 @@ function ListServicesOrder(): JSX.Element {
     setLoading(true)
     setError(null)
     try {
-      // Don't attempt to fetch orders if the user is not authenticated on this device
+      // Não tento buscar ordens se o usuário não está autenticado neste dispositivo
       const session = await retrieveUserSession()
       const userObj = session && (session.data ? session.data : session)
       if (!userObj || !userObj.email) {
@@ -45,8 +45,8 @@ function ListServicesOrder(): JSX.Element {
       const response = await getServicesOrders({ filters })
       console.log('fetchOrders response shape:', response && Object.keys(response))
 
-      // Normalize possible response shapes: server may return array directly
-      // or wrap it in `data` (axios) or `data.data` (API wrapper).
+      // Normalizo possíveis formatos de resposta: o servidor pode retornar array diretamente
+      // ou envolver em `data` (axios) ou `data.data` (API wrapper).
       let ordersData: any[] = []
       if (!response) {
         ordersData = []
@@ -62,7 +62,7 @@ function ListServicesOrder(): JSX.Element {
       } else if (Array.isArray(response)) {
         ordersData = response
       } else {
-        // last resort: try to find any array in response object
+        // último recurso: tento encontrar qualquer array no objeto de resposta
         const maybeArray = Object.values(response).find((v: any) => Array.isArray(v))
         ordersData = Array.isArray(maybeArray) ? maybeArray : []
       }
@@ -109,11 +109,11 @@ function ListServicesOrder(): JSX.Element {
     fetchOrders(filters)
   }
 
-  // Group orders by voyage (defensive: ensure `orders` is an array)
+  // Agrupo ordens por viagem (defensivo: garanto que `orders` é um array)
   const groupOrdersByVoyage = (orders: any[]) => {
     if (!Array.isArray(orders)) return {}
     const grouped = orders.reduce((acc, order) => {
-      // Try to get voyage name with priority
+      // Tento obter o nome da viagem com prioridade
       const voyageName = order?.voyage?.name || 
                          order?.voyage_name || 
                          order?.voyageName || 

@@ -1,36 +1,113 @@
-import api from "./connection"
-import { retrieveDomain } from "./retrieveUserSession"
-import { getCredentials } from "../databases/database"
+/**
+ * Módulo Auxiliar de MTR
+ * 
+ * Este módulo fornece funções auxiliares simplificadas para operações de MTR.
+ * Re-exporto funções de mtrService.ts para consumo mais fácil.
+ * 
+ * @module services/mtr
+ */
 
-export const generateMTR = async (orderId: number, photoUri: string | null, metadata: any = {}) => {
-  const URL = await retrieveDomain()
+import {
+  buildDefaultPayload as buildDefaultPayloadService,
+  emitirMTR as emitirMTRService,
+  downloadMTRById as downloadMTRByIdService,
+  EmitMTRPayload,
+  EmitMTROptions,
+  DownloadMTRResult,
+  WasteItem,
+  CetesbTokenRequest,
+  generateMTR as generateMTRLegacy,
+} from "./mtrService";
 
-  const credentials: any = getCredentials()
-  if (!credentials || !credentials.accessToken) throw new Error("NO_CREDENTIALS")
+// Re-exporto tipos por conveniência
+export type {
+  EmitMTRPayload,
+  EmitMTROptions,
+  DownloadMTRResult,
+  WasteItem,
+  CetesbTokenRequest,
+};
 
-  const formData = new FormData()
-  formData.append("mtr[order_id]", String(orderId))
-  Object.keys(metadata || {}).forEach((k) => formData.append(k, metadata[k]))
-
-  if (photoUri) {
-    // filename inference
-    const filename = photoUri.split('/').pop() || `photo-${Date.now()}.jpg`
-    const file: any = {
-      uri: photoUri,
-      name: filename,
-      type: "image/jpeg",
-    }
-    formData.append("mtr[photo]", file as any)
-  }
-
-  return api.post(`${URL?.data}/service_orders/${orderId}/mtr`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      "access-token": credentials.accessToken,
-      client: credentials.client,
-      uid: credentials.uid,
-    },
-  })
+/**
+ * Construo uma carga útil MTR padrão com substituições opcionais
+ * 
+ * @param overrides - Payload parcial para sobrescrever padrões
+ * @returns EmitMTRPayload completo
+ * 
+ * @example
+ * ```typescript
+ * const payload = buildDefaultPayload({
+ *   company_id: "123",
+ *   service_order_id: "456"
+ * });
+ * // payload.emission_state === "SP" (padrão mantido)
+ * // payload.waste_items.length >= 1
+ * ```
+ */
+export function buildDefaultPayload(
+  overrides: Partial<EmitMTRPayload> = {}
+): EmitMTRPayload {
+  return buildDefaultPayloadService(overrides);
 }
 
-export default generateMTR
+/**
+ * Emito um MTR com callbacks para integração com UI
+ * 
+ * @param options - Opções de emissão incluindo callbacks
+ * 
+ * @example
+ * ```typescript
+ * await emitirMTR({
+ *   companyId: "123",
+ *   serviceOrderId: "456",
+ *   trackingCode: "TRACK-001",
+ *   onStart: () => setLoading(true),
+ *   onSuccess: (result) => {
+ *     setLoading(false);
+ *     console.log("MTR ID:", result.mtr_id);
+ *   },
+ *   onError: (err) => {
+ *     setLoading(false);
+ *     console.error("Error:", err.message);
+ *   },
+ * });
+ * ```
+ */
+export async function emitirMTR(options: EmitMTROptions): Promise<void> {
+  return emitirMTRService(options);
+}
+
+/**
+ * Faço download de um PDF de MTR por ID
+ * 
+ * @param mtrId - O ID do MTR
+ * @param autoShare - Se devo abrir diálogo de compartilhamento (padrão: true)
+ * @returns Resultado do download com localUri e filename
+ * 
+ * @example
+ * ```typescript
+ * const result = await downloadMTRById("42", true);
+ * console.log("Baixado para:", result.localUri);
+ * ```
+ */
+export async function downloadMTRById(
+  mtrId: string | number,
+  autoShare: boolean = true
+): Promise<DownloadMTRResult> {
+  return downloadMTRByIdService(mtrId, autoShare);
+}
+
+/**
+ * @deprecated Use emitirMTR ou funções de mtrService no lugar.
+ * 
+ * Função legada para geração de MTR usando FormData/multipart.
+ * Mantida para compatibilidade com versões anteriores.
+ */
+export const generateMTR = generateMTRLegacy;
+
+export default {
+  buildDefaultPayload,
+  emitirMTR,
+  downloadMTRById,
+  generateMTR,
+};

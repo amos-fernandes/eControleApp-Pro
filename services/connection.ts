@@ -28,9 +28,9 @@ async function saveCredentials(data: HeadersTypes) {
 
 const axiosEControleConfig = {
   timeout: 30000,
-  // For web, set baseURL to empty string to use relative URLs with proxy
-  // For native, do not set baseURL as the app constructs full URLs at call sites
-  // using the domain saved by scanning the QR (retrieveDomain()).
+  // Para web, defino baseURL como string vazia para usar URLs relativas com proxy
+  // Para native, não defino baseURL pois o app constrói URLs completas nos locais de chamada
+  // usando o domínio salvo ao escanear o QR (retrieveDomain()).
   baseURL: Platform.OS === 'web' ? '' : undefined,
 }
 
@@ -39,11 +39,11 @@ const api = axios.create(axiosEControleConfig)
 async function setAxiosHeaders() {
   try {
     if (Platform.OS === 'web') {
-      // On web we do not have SQLite native; avoid attempting to access it.
+      // Na web não tenho SQLite nativo; evito tentar acessá-lo.
       return
     }
 
-    // Usar a função de banco de dados SQLite para obter as credenciais
+    // Uso a função de banco de dados SQLite para obter as credenciais
     const { getCredentials } = await import("../databases/database")
     const credentials: any = getCredentials()
 
@@ -86,7 +86,7 @@ api.interceptors.response.use(
       const uid = h[headersTypes.uid]
       const tokenType = h[headersTypes.tokenType]
 
-      // Only persist credentials when this response is from the login endpoint
+      // Só persisto credenciais quando esta resposta é do endpoint de login
       const reqUrl = (response.config && response.config.url) ? String(response.config.url) : ""
       const reqMethod = (response.config && response.config.method) ? String(response.config.method).toLowerCase() : ""
       const isAuthResponse = reqUrl.includes("/auth/sign_in") || (reqMethod === "post" && reqUrl.includes("/auth"))
@@ -97,13 +97,13 @@ api.interceptors.response.use(
       } else if (accessToken && client && uid) {
         console.log("Auth headers present but not saved (non-auth response):", reqMethod, reqUrl)
       }
-      // Debug: log which auth headers are present (if any)
+      // Debug: registro quais headers de auth estão presentes (se houver)
       try {
         const authHeaders = [headersTypes.accessToken, headersTypes.client, headersTypes.uid]
         const present = Object.keys(h).filter((k) => authHeaders.includes(k as any))
         console.log('Response headers keys present for auth:', present)
       } catch (e) {
-        // ignore
+        // ignoro
       }
     } catch (err) {
       console.log("response interceptor saveCredentials error:", err)

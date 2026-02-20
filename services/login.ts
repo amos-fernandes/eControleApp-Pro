@@ -25,7 +25,7 @@ const login = async (email: string, password: string) => {
               password,
             }),
           )
-          // Save credentials to database
+          // Salvo credenciais no banco de dados
           try {
             await insertCredentials({
               accessToken: response.headers['access-token'],
