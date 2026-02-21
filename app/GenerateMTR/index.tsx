@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from "react"
 import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native"
-// uso require para tolerar diferentes formatos de módulo no runtime do dev-client
+// use require to tolerate different module shapes in the dev-client runtime
 const CameraModule: any = require("expo-camera")
 const CameraComp: any = CameraModule?.Camera || CameraModule?.default || CameraModule
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { StackNavigationProp } from "@react-navigation/stack"
 import { StackParamList } from "@/routes/stack.routes"
-import { generateMTR } from "@/services/mtr"
+import generateMTR from "@/services/mtr"
 
 type GenerateMTRScreenProp = StackNavigationProp<StackParamList, "GenerateMTR">
 

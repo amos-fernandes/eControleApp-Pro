@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { Slot } from "expo-router"
 import { SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
@@ -10,25 +10,23 @@ import { SaveDataToSecureStore } from "@/utils/SecureStore"
 console.log("ROOT_LAYOUT_LOADED: Starting boot sequence...")
 
 export default function RootLayout() {
-  const [isReady, setIsReady] = useState(false)
-
   useEffect(() => {
     const initializeApp = async () => {
       console.log("ROOT_LAYOUT_EFFECT: Initializing Database...")
       try {
-        // Inicializo o schema do banco de dados local (SQLite)
+        // Initialize local database schema (Realm)
         await initDatabase()
         console.log("ROOT_LAYOUT_EFFECT: DB Initialized")
       } catch (error) {
         console.log("ROOT_LAYOUT_EFFECT: DB Fatal Error:", error)
       }
 
-      // Se estiver rodando na web, pré-populo o domínio para que a web possa conectar diretamente
+      // If running on web, pre-populate domain so web can connect directly
       if (Platform.OS === "web") {
         try {
           const domainPayload = JSON.stringify({ domain: "https://testeaplicativo.econtrole.com/login?redirect_url=%2Foperacional%2Fviagens" })
           SaveDataToSecureStore("domain", domainPayload)
-          // Também salvo o caminho de redirecionamento para navegação após login
+          // Also save redirect path for login navigation
           SaveDataToSecureStore("redirect_path", "/operacional/viagens")
           console.log("ROOT_LAYOUT_EFFECT: Web domain prefilled")
         } catch (e) {
@@ -36,18 +34,12 @@ export default function RootLayout() {
         }
       }
 
-      // Escondo a splash screen
-      await SplashScreen.hideAsync()
-      setIsReady(true)
+      // Hide splash screen
+      SplashScreen.hideAsync()
     }
 
     initializeApp()
   }, [])
-
-  if (!isReady) {
-    // Retorno null enquanto inicializo
-    return null
-  }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

@@ -17,22 +17,25 @@ function AuthOrApp() {
         const domain = await retrieveDomain()
         const userObj = user && (user.data ? user.data : user)
 
-        // Exijo user_session (com email) e domínio válidos e credenciais armazenadas no Realm
-        // Além disso, exigo uma flag explícita `auto_login` no SecureStore para permitir login automático.
+        // Require user_session (having an email) and domain to be valid and have credentials stored in Realm
+        // Additionally require an explicit `auto_login` flag in SecureStore to allow automatic login.
         const allowAuto = (await GetDataFromSecureStore("auto_login")) === "true"
         if (userObj && userObj.email && domain && domain.status === 200 && allowAuto) {
           try {
-            const creds: any = getCredentials()
-            if (creds && creds.accessToken) {
-              setAuthenticated(true)
+            const realm = await getRealm()
+            if (realm && typeof realm.objects === "function") {
+              const creds: any = realm.objects("Credentials")?.[0]
+              if (creds && creds.accessToken) {
+                setAuthenticated(true)
+              }
             }
           } catch (e) {
-            // credenciais indisponíveis ou não persistidas — trato como não autenticado
+            // realm unavailable or no credentials persisted — treat as not authenticated
             setAuthenticated(false)
           }
         }
       } catch (e) {
-        // ignoro e faço fallback para não autenticado
+        // ignore and fall back to unauthenticated
       } finally {
         setReady(true)
       }
