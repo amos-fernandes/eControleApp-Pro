@@ -136,7 +136,7 @@ function Routes(): JSX.Element {
     const routeMap: { [key: string]: any[] } = {}
 
     orders.forEach(order => {
-      const routeName = order.collection_route || order.route?.name || 'Rota não definida'
+      const routeName = order.collection_route || order.route?.name || order.route_name || 'Rota não definida'
       const enhancedOrder = {
         ...order,
         hasCollectionPoints: !!(order.address?.latitude && order.address?.longitude),
@@ -150,9 +150,30 @@ function Routes(): JSX.Element {
     const routeGroups: RouteGroup[] = Object.entries(routeMap).map(([routeName, ordersForRoute]) => {
       const tripMap: { [key: string]: any[] } = {}
       ordersForRoute.forEach(o => {
-        // Tento obter o nome da viagem/voyage
-        const tripName = o.voyage?.name || 'Sem Viagem'
+        // Tento obter o nome da viagem/voyage com múltiplas tentativas
+        let tripName = 'Sem Viagem'
         
+        if (o?.voyage) {
+          if (typeof o.voyage === 'object') {
+            tripName = o.voyage.name || 
+                       o.voyage.voyage_name || 
+                       o.voyage.identifier || 
+                       String(o.voyage.id || '')
+          } else if (typeof o.voyage === 'string') {
+            tripName = o.voyage
+          }
+        }
+        
+        // Fallback para outros campos
+        if (tripName === 'Sem Viagem' || !tripName) {
+          tripName = o.voyage_name || 
+                     o.voyageName || 
+                     o.trip_name || 
+                     o.tripName ||
+                     o.route_name ||
+                     (o.voyage_id ? `Viagem #${o.voyage_id}` : 'Sem Viagem')
+        }
+
         if (!tripMap[tripName]) tripMap[tripName] = []
         tripMap[tripName].push(o)
       })

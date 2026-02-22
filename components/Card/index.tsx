@@ -29,8 +29,31 @@ function Card({ cardData }: { cardData: any[] }) {
   const navigation = useNavigation<ServicesOrderScreenProp>()
   const [isExpanded, setIsExpanded] = useState(true)
 
-  // Obtenho o nome da viagem da primeira ordem ou uso "Sem Viagem" se não houver
-  const voyageName = cardData?.[0]?.voyage?.name || "Sem Viagem"
+  // Obtenho o nome da viagem da primeira ordem com múltiplas tentativas
+  let voyageName = "Sem Viagem"
+  
+  if (cardData?.[0]?.voyage) {
+    const voyage = cardData[0].voyage
+    if (typeof voyage === 'object') {
+      voyageName = voyage.name || 
+                   voyage.voyage_name || 
+                   voyage.identifier || 
+                   String(voyage.id || '')
+    } else if (typeof voyage === 'string') {
+      voyageName = voyage
+    }
+  }
+  
+  // Fallback para outros campos
+  if (voyageName === "Sem Viagem" || !voyageName) {
+    voyageName = cardData?.[0]?.voyage_name || 
+                 cardData?.[0]?.voyageName || 
+                 cardData?.[0]?.trip_name ||
+                 cardData?.[0]?.tripName ||
+                 cardData?.[0]?.route_name ||
+                 (cardData?.[0]?.voyage_id ? `Viagem #${cardData[0].voyage_id}` : "Sem Viagem")
+  }
+  
   const orderCount = cardData?.length || 0
 
   const getStatusText = (status: string) => {

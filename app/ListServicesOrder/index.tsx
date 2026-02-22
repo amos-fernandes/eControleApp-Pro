@@ -72,7 +72,8 @@ function ListServicesOrder(): JSX.Element {
 
       console.log('Resolved orders count:', Array.isArray(ordersData) ? ordersData.length : 0)
       if (Array.isArray(ordersData) && ordersData.length > 0) {
-        console.log('First order sample:', ordersData[0])
+        console.log('First order sample:', JSON.stringify(ordersData[0], null, 2))
+        console.log('First order voyage structure:', ordersData[0]?.voyage)
       }
       setOrders(ordersData)
     } catch (error: any) {
@@ -116,15 +117,31 @@ function ListServicesOrder(): JSX.Element {
   const groupOrdersByVoyage = (orders: any[]) => {
     if (!Array.isArray(orders)) return {}
     const grouped = orders.reduce((acc, order) => {
-      // Tento obter o nome da viagem com prioridade
-      const voyageName = order?.voyage?.name || 
-                         order?.voyage_name || 
-                         order?.voyageName || 
-                         (order?.voyage && typeof order.voyage === 'string' ? order.voyage : null) ||
-                         order?.voyage_id ||
-                         order?.route_name ||
-                         "Sem Viagem"
+      // Tento obter o nome da viagem com múltiplas tentativas
+      let voyageName = "Sem Viagem"
       
+      if (order?.voyage) {
+        // voyage pode ser objeto ou string
+        if (typeof order.voyage === 'object') {
+          voyageName = order.voyage.name || 
+                       order.voyage.voyage_name || 
+                       order.voyage.identifier || 
+                       String(order.voyage.id || '')
+        } else if (typeof order.voyage === 'string') {
+          voyageName = order.voyage
+        }
+      }
+      
+      // Fallback para outros campos possíveis
+      if (voyageName === "Sem Viagem" || !voyageName) {
+        voyageName = order?.voyage_name || 
+                     order?.voyageName || 
+                     order?.trip_name ||
+                     order?.tripName ||
+                     order?.route_name ||
+                     (order?.voyage_id ? `Viagem #${order.voyage_id}` : "Sem Viagem")
+      }
+
       if (!acc[voyageName]) {
         acc[voyageName] = []
       }
