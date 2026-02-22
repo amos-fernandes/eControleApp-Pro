@@ -1,8 +1,7 @@
 import React from "react"
-import { AppRoutes } from "@/routes/stack.routes"
 
-// O expo-router já fornece um NavigationContainer na raiz do app.
-// Não envolvo os navegadores com outro NavigationContainer para evitar aninhamento.
+// A navegação é tratada pelo _layout.tsx com NavigationContainer + AppRoutes
+// Este arquivo é mantido para compatibilidade com expo-router
 export default function App() {
-  return <AppRoutes />
+  return null
 }

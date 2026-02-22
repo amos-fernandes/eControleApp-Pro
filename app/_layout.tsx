@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react"
-import { Slot } from "expo-router"
+import { NavigationContainer } from "@react-navigation/native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
 
 import { initDatabase } from "../databases/database"
 import { Platform } from "react-native"
 import { SaveDataToSecureStore } from "@/utils/SecureStore"
+import { AppRoutes } from "@/routes/stack.routes"
 
 console.log("ROOT_LAYOUT_LOADED: Starting boot sequence...")
 
@@ -51,7 +52,9 @@ export default function RootLayout() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Slot />
+      <NavigationContainer>
+        <AppRoutes />
+      </NavigationContainer>
     </SafeAreaView>
   )
 }
