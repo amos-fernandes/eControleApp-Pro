@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   FlatList,
+  TouchableOpacity,
 } from "react-native"
 import { useFocusEffect, useRoute } from "@react-navigation/native"
 import { useNavigation } from "@react-navigation/native"
@@ -18,6 +19,7 @@ import { retrieveUserSession } from "@/services/retrieveUserSession"
 
 import Card from "../../components/Card"
 import BottomNavigation from "../../components/BottomNavigation"
+import ListServicesFilters from "./ListServicesFilters"
 
 const isListServicesOrderScreen = (route: any) => route.name === "ListServicesOrder"
 
@@ -26,6 +28,7 @@ function ListServicesOrder(): JSX.Element {
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
 
   const { filters } = useFilterServiceOrderStore()
 
@@ -147,6 +150,28 @@ function ListServicesOrder(): JSX.Element {
           alignItems: "stretch",
         }}
       >
+        {/* Header com botão de filtros */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#e0e0e0" }}>
+          <Text style={{ fontSize: 16, fontWeight: "bold", color: "#333" }}>
+            {filters.voyage === "all" ? "Todas as Viagens" : filters.voyage === "assigned" ? "Com Viagem" : "Sem Viagem"}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowFilters(true)}
+            style={{
+              backgroundColor: "#007AFF",
+              paddingHorizontal: 15,
+              paddingVertical: 8,
+              borderRadius: 8,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 14, fontWeight: "bold", marginLeft: 5 }}>
+              📊 Filtros
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {loading ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
             <ActivityIndicator size="large" color="#56d156" />
@@ -201,6 +226,7 @@ function ListServicesOrder(): JSX.Element {
         )}
       </View>
       <BottomNavigation currentScreen="ListServicesOrder" />
+      <ListServicesFilters visible={showFilters} onClose={() => setShowFilters(false)} />
     </SafeAreaView>
   )
 }

@@ -27,6 +27,7 @@ import { useFilterServiceOrderStore } from "@/stores/useFilterServiceOrder"
 import { getServicesOrders } from "@/services/servicesOrders"
 
 import BottomNavigation from "../../components/BottomNavigation"
+import ListServicesFilters from "../ListServicesOrder/ListServicesFilters"
 
 const isRoutesScreen = (route: any) => route.name === "Routes"
 
@@ -48,6 +49,7 @@ function Routes(): JSX.Element {
   const [trips, setTrips] = useState<RouteGroup[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
 
   const { filters } = useFilterServiceOrderStore()
 
@@ -232,11 +234,24 @@ function Routes(): JSX.Element {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }}>
-        {/* Header */}
+        {/* Header com título e botão de filtros */}
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: "#333", marginBottom: 4 }}>
-            Rotas e Viagens
-          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <Text style={{ fontSize: 24, fontWeight: "bold", color: "#333" }}>
+              Rotas e Viagens
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowFilters(true)}
+              style={{
+                backgroundColor: "#007AFF",
+                paddingHorizontal: 15,
+                paddingVertical: 8,
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 14, fontWeight: "bold" }}>📊 Filtros</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={{ fontSize: 14, color: "#666" }}>
             Gerencie suas viagens e rotas de coleta
           </Text>
@@ -289,6 +304,7 @@ function Routes(): JSX.Element {
         )}
       </View>
       <BottomNavigation currentScreen="Routes" />
+      <ListServicesFilters visible={showFilters} onClose={() => setShowFilters(false)} />
     </SafeAreaView>
   )
 }
