@@ -2,6 +2,7 @@ import React from "react"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 
 import AuthOrApp from "@/app/AuthOrApp"
+import Home from "@/app/Home"
 import ListServicesOrder from "@/app/ListServicesOrder"
 import Login from "@/app/Login"
 import QRCode from "@/app/QRCodeScanner"
@@ -16,6 +17,7 @@ export type StackParamList = {
   AuthenticationScreen: undefined
   Login: undefined
   QRCode: undefined
+  Home: undefined
   ListServicesOrder: undefined
   Routes: undefined
   UpdateServicesOrder: ServicesOrderInterface
@@ -29,6 +31,15 @@ export function AppRoutes() {
     <Stack.Navigator initialRouteName="AuthOrApp">
       <Stack.Screen name="AuthOrApp" component={AuthOrApp} options={{ headerShown: false }} />
       <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="Home"
+        component={Home}
+        options={{
+          title: "eControle",
+          headerTitleAlign: "center",
+          headerStyle: { backgroundColor: "#fff" },
+        }}
+      />
       <Stack.Screen
         name="ListServicesOrder"
         component={ListServicesOrder}

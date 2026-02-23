@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { retrieveUserSession, retrieveDomain } from "../../services/retrieveUserSession"
 import { GetDataFromSecureStore } from "@/utils/SecureStore"
 import Authentication from "../Authentication"
-import ListServicesOrder from "../ListServicesOrder"
+import Home from "../Home"
 import { getCredentials } from "@/databases/database"
 
 function AuthOrApp() {
@@ -43,7 +43,7 @@ function AuthOrApp() {
 
   if (!ready) return null
 
-  return authenticated ? <ListServicesOrder /> : <Authentication />
+  return authenticated ? <Home /> : <Authentication />
 }
 
 export default AuthOrApp
