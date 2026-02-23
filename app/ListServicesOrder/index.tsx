@@ -45,6 +45,8 @@ function ListServicesOrder(): JSX.Element {
     setLoading(true)
     setError(null)
     try {
+      console.log("🔄 Fetching orders with filters:", filters)
+      
       // Don't attempt to fetch orders if the user is not authenticated on this device
       const session = await retrieveUserSession()
       const userObj = session && (session.data ? session.data : session)

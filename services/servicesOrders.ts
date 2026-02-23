@@ -26,7 +26,34 @@ export const getServicesOrders = async ({ filters }: FilterServiceOrderState) =>
       throw new Error("INVALID_DOMAIN")
     }
 
-    const params = { ...filters }
+    // Construo params apenas com filtros válidos (não envia 'all' ou vazio)
+    const params: any = {}
+    
+    if (filters.status && filters.status !== 'all') {
+      params.status = filters.status
+    }
+    
+    if (filters.so_type && filters.so_type !== 'all') {
+      params.so_type = filters.so_type
+    }
+    
+    if (filters.voyage && filters.voyage !== 'all') {
+      params.voyage = filters.voyage
+    }
+    
+    if (filters.start_date) {
+      params.start_date = filters.start_date
+    }
+    
+    if (filters.end_date) {
+      params.end_date = filters.end_date
+    }
+    
+    if (filters.route_name && filters.route_name.trim() !== '') {
+      params.route_name = filters.route_name.trim()
+    }
+
+    console.log("📊 Filtros sendo enviados:", params)
 
     const response = await api
       .get(`${URL.data}/service_orders`, {
