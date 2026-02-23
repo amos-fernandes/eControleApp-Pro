@@ -9,11 +9,14 @@ module.exports = {
     }],
   },
   transformIgnorePatterns: [
-    "node_modules/(?!(axios)/)",
+    "node_modules/(?!(axios|expo-secure-store|expo-network)/)",
   ],
   moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/$1",
     "^expo-file-system$": "<rootDir>/__mocks__/expo-file-system.ts",
     "^expo-sharing$": "<rootDir>/__mocks__/expo-sharing.ts",
+    "^expo-secure-store$": "<rootDir>/__mocks__/expo-secure-store.ts",
+    "^expo-network$": "<rootDir>/__mocks__/expo-network.ts",
     "^react-native$": "<rootDir>/__mocks__/react-native.ts",
     "^@/databases/database$": "<rootDir>/__mocks__/database.ts",
     "^@/services/retrieveUserSession$": "<rootDir>/__mocks__/retrieveUserSession.ts",

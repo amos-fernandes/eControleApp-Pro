@@ -1,7 +1,7 @@
 import { openDatabaseSync } from 'expo-sqlite'
 
 let _db: any = null
-const getDB = () => {
+export const getDB = () => {
     if (!_db) {
         _db = openDatabaseSync('econtrole.db')
     }

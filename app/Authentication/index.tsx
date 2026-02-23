@@ -29,6 +29,14 @@ function Authentication(): JSX.Element {
     }
   }
 
+  const goToLogin = async () => {
+    try {
+      navigation.navigate("Login")
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   return (
     <Container>
       <Logo source={require("../../assets/images/logo_econtrole_residuo4.png")} />
@@ -41,6 +49,14 @@ function Authentication(): JSX.Element {
         )}
 
         <TextButton>Entre com QRCode</TextButton>
+      </QRCodeButton>
+
+      <QRCodeButton 
+        activeOpacity={0.5} 
+        onPress={() => goToLogin()}
+        style={{ marginTop: 20, backgroundColor: '#f0f0f0' }}
+      >
+        
       </QRCodeButton>
     </Container>
   )

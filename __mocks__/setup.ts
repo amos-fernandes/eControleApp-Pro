@@ -44,7 +44,32 @@ jest.mock("../databases/database", () => ({
   getMTRById: jest.fn(),
 }));
 
+// Mock do expo-network
+jest.mock("expo-network", () => ({
+  getNetworkStateAsync: jest.fn().mockResolvedValue({
+    isConnected: true,
+    isInternetReachable: true,
+    type: "wifi",
+  }),
+  getIpAddressAsync: jest.fn().mockResolvedValue("192.168.1.100"),
+  getMacAddressAsync: jest.fn().mockResolvedValue("00:00:00:00:00:00"),
+}));
+
 // Mock do retrieveUserSession
 jest.mock("../services/retrieveUserSession", () => ({
-  retrieveDomain: jest.fn().mockResolvedValue({ data: "http://mock-domain.com" }),
+  retrieveUserSession: jest.fn().mockImplementation(async () => {
+    console.log("retrieveUserSession: [MOCK] Starting...")
+    return { 
+      status: 200, 
+      data: { email: "test@example.com", password: "password123" } 
+    }
+  }),
+  retrieveDomain: jest.fn().mockImplementation(async () => {
+    console.log("retrieveDomain: [MOCK] Starting...")
+    return { 
+      status: 200, 
+      data: "http://mock-domain.com/api" 
+    }
+  }),
+  getLocalIpAddress: jest.fn().mockResolvedValue("192.168.1.100"),
 }));

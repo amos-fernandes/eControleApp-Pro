@@ -1,41 +1,122 @@
 import { GetDataFromSecureStore } from "@/utils/SecureStore"
 import { Platform } from 'react-native'
+import * as Network from 'expo-network'
 
 import { ResponseInterface } from "../interfaces/Response"
 import decoded from "../utils/decoded"
 
 export const retrieveUserSession = async (): Promise<ResponseInterface> => {
+  console.log("retrieveUserSession: Starting...")
   try {
     const session = await GetDataFromSecureStore("user_session")
+    console.log("retrieveUserSession: Raw session:", session)
+
     if (session) {
-      return JSON.parse(session)
+      const parsed = JSON.parse(session)
+      console.log("retrieveUserSession: Parsed session:", parsed)
+      return { status: 200, data: parsed }
     }
+    console.log("retrieveUserSession: No session found")
     return { status: 404, data: "retrieveUserSession" }
   } catch (error) {
-    console.log("retrieveUserSession: ", error)
+    console.log("retrieveUserSession: Error:", error)
     return { status: 401 }
   }
 }
 
+/**
+ * Obtém o IP local da rede LAN
+ */
+export const getLocalIpAddress = async (): Promise<string | null> => {
+  try {
+    const ipAddress = await Network.getIpAddressAsync()
+    console.log("Local IP address:", ipAddress)
+    
+    if (ipAddress && ipAddress !== '') {
+      return ipAddress
+    }
+    return null
+  } catch (error) {
+    console.log("getLocalIpAddress error:", error)
+    return null
+  }
+}
+
+/**
+ * Verifica se o domínio é um endereço local (localhost, 127.0.0.1, etc.)
+ */
+const isLocalhostDomain = (domain: string): boolean => {
+  const localhostPatterns = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+  ]
+  return localhostPatterns.some(pattern => domain.includes(pattern))
+}
+
+/**
+ * Corrige o domínio localhost para o IP da rede local
+ */
+const fixLocalhostDomain = async (domain: string): Promise<string> => {
+  if (!isLocalhostDomain(domain)) {
+    return domain
+  }
+
+  console.log("LOCALHOST DETECTED: Attempting to fix domain from", domain)
+  
+  const localIp = await getLocalIpAddress()
+  if (localIp) {
+    // Extrai a porta do domínio original (se houver)
+    const portMatch = domain.match(/:(\d+)/)
+    const port = portMatch ? portMatch[0] : ':19000'
+    
+    const fixedDomain = `http://${localIp}${port}`
+    console.log("DOMAIN FIXED: Using local IP", fixedDomain)
+    return fixedDomain
+  }
+  
+  console.log("Could not fix domain - no local IP found")
+  return domain
+}
+
 export const retrieveDomain = async (): Promise<ResponseInterface> => {
+  console.log("retrieveDomain: Starting...")
+  
   // Para desenvolvimento web, uso proxy para evitar problemas de CORS
   if (Platform.OS === 'web') {
+    console.log("retrieveDomain: Web platform, returning empty string")
     return { status: 200, data: '' }
   }
 
   try {
     const session: any = await GetDataFromSecureStore("domain")
-    if (!session) return { status: 404 }
+    console.log("retrieveDomain: Raw session from SecureStore:", session)
+    
+    if (!session) {
+      console.log("retrieveDomain: No session found, returning 404")
+      return { status: 404 }
+    }
 
     // `GetDataFromSecureStore` pode retornar um objeto parseado na web ou uma string JSON no native.
     const parsedSession = typeof session === 'string' ? JSON.parse(session) : session
     let domain = parsedSession.domain
+    console.log("retrieveDomain: Extracted domain:", domain)
 
-    if (!domain) return { status: 404 }
+    if (!domain) {
+      console.log("retrieveDomain: Domain is empty, returning 404")
+      return { status: 404 }
+    }
 
-    // Rejeito links do Metro/Expo
-    if (domain.includes("expo-development-client") || domain.includes("192.168") || domain.includes("8081")) {
-      console.log("DETECTED METRO QR CODE. REJECTING.")
+    // Corrige automaticamente domínios localhost/127.0.0.1
+    if (isLocalhostDomain(domain)) {
+      console.log("retrieveDomain: Localhost detected, attempting fix...")
+      domain = await fixLocalhostDomain(domain)
+      console.log("retrieveDomain: Domain after fix:", domain)
+    }
+
+    // Rejeito APENAS links do Metro/Expo dev client (não IPs locais válidos)
+    if (domain.includes("expo-development-client")) {
+      console.log("retrieveDomain: DETECTED METRO QR CODE. REJECTING.")
       return { status: 400, data: "INVALID_URL_METRO" }
     }
 
