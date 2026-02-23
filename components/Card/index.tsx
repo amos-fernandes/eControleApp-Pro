@@ -17,8 +17,31 @@ function Card({ cardData }: { cardData: any[] }) {
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(true)
 
-  // Get voyage name from first order or use "Sem Viagem" if none
-  const voyageName = cardData?.[0]?.voyage?.name || "Sem Viagem"
+  // Get voyage name from first order with multiple fallbacks
+  let voyageName = "Sem Viagem"
+  
+  if (cardData?.[0]?.voyage) {
+    const voyage = cardData[0].voyage
+    if (typeof voyage === 'object') {
+      voyageName = voyage.name || 
+                   voyage.voyage_name || 
+                   voyage.identifier || 
+                   String(voyage.id || '')
+    } else if (typeof voyage === 'string') {
+      voyageName = voyage
+    }
+  }
+  
+  // Fallback para outros campos
+  if (voyageName === "Sem Viagem" || !voyageName) {
+    voyageName = cardData?.[0]?.voyage_name || 
+                 cardData?.[0]?.voyageName || 
+                 cardData?.[0]?.trip_name ||
+                 cardData?.[0]?.tripName ||
+                 cardData?.[0]?.route_name ||
+                 (cardData?.[0]?.voyage_id ? `Viagem #${cardData[0].voyage_id}` : "Sem Viagem")
+  }
+  
   const orderCount = cardData?.length || 0
 
   const getStatusText = (status: string) => {
@@ -133,13 +156,46 @@ function Card({ cardData }: { cardData: any[] }) {
             <View>
               <ContainerTitle style={{ marginTop: 10 }}>
                 <Text style={{ fontSize: 12, color: "#666" }}>
-                  📅 Data: {(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date) ? 
-                    new Date(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date).toLocaleDateString('pt-BR') : 
+                  📅 Data: {(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date) ?
+                    new Date(cardData?.[0]?.voyage?.date || cardData?.[0]?.route_date).toLocaleDateString('pt-BR') :
                     new Date(order.service_date).toLocaleDateString('pt-BR')}
                 </Text>
               </ContainerTitle>
             </View>
           )}
+
+          {/* Botão MTR no card de detalhes */}
+          <View style={{ marginTop: 15, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <WithLocalSvg 
+                width={16} 
+                height={16} 
+                asset={require("@/assets/images/icons/factory.svg")}
+                style={{ opacity: 0.5 }}
+              />
+              <Text style={{ fontSize: 11, color: "#999", marginLeft: 5 }}>
+                {order.collection_route || order.route_name || "Rota não definida"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push({
+                pathname: "/GenerateMTR",
+                params: {
+                  orderId: order.id,
+                  customerId: order.customer_id,
+                  customerName: order.customer?.name || order.customer?.business_name || ""
+                }
+              })}
+              style={{
+                backgroundColor: "#007AFF",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 6,
+              }}
+            >
+              <Text style={{ color: "#fff", fontSize: 12, fontWeight: "bold" }}>📄 MTR</Text>
+            </TouchableOpacity>
+          </View>
         </CardContainer>
       ))}
     </View>

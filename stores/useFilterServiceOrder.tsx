@@ -8,6 +8,7 @@ interface FilterServiceOrderState {
     start_date?: string
     end_date?: string
     voyage: string
+    route_name?: string
   }
   setFilters: (filters: Partial<FilterServiceOrderState["filters"]>) => void
   resetFilters: () => void
@@ -22,6 +23,7 @@ export const useFilterServiceOrderStore = create<FilterServiceOrderState>((set) 
     start_date: moment().subtract(1, "month").format(dateFormat),
     end_date: moment().add(1, "day").format(dateFormat),
     voyage: "all",
+    route_name: "",
   },
   setFilters: (newFilters) =>
     set((state) => ({
@@ -35,6 +37,7 @@ export const useFilterServiceOrderStore = create<FilterServiceOrderState>((set) 
         start_date: moment().subtract(1, "month").format(dateFormat),
         end_date: moment().add(1, "day").format(dateFormat),
         voyage: "all",
+        route_name: "",
       },
     }),
 }))

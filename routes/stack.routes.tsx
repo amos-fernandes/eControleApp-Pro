@@ -7,6 +7,7 @@ import Login from "@/app/Login"
 import QRCode from "@/app/QRCodeScanner"
 import Routes from "@/app/Routes"
 import UpdateServicesOrder from "@/app/UpdateServicesOrder"
+import GenerateMTR from "@/app/GenerateMTR"
 
 import { ServicesOrderInterface } from "../interfaces/ServicesOrder"
 
@@ -18,6 +19,7 @@ export type StackParamList = {
   ListServicesOrder: undefined
   Routes: undefined
   UpdateServicesOrder: ServicesOrderInterface
+  GenerateMTR: { orderId: number; customerId?: string; customerName?: string }
 }
 
 const Stack = createNativeStackNavigator<StackParamList>()
@@ -58,6 +60,16 @@ export function AppRoutes() {
         }}
       />
       <Stack.Screen name="QRCode" component={QRCode} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="GenerateMTR"
+        component={GenerateMTR}
+        options={{
+          title: "Gerar MTR",
+          headerTitleAlign: "center",
+          headerTransparent: true,
+          headerStyle: { backgroundColor: "#fff" },
+        }}
+      />
     </Stack.Navigator>
   )
 }

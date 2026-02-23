@@ -8,22 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "prebuildCommand": "npx expo prebuild --platform android --no-install"
+        "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "prebuildCommand": "npx expo prebuild --platform android --no-install"
+        "buildType": "apk"
+      },
+      "env": {
+        "CETESB_CPF": "01442881178",
+        "CETESB_SENHA": "devtesteeco",
+        "CETESB_UNIDADE": "19033"
       }
     },
     "production": {
-      "autoIncrement": true,
-      "android": {
-        "prebuildCommand": "npx expo prebuild --platform android --no-install"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
