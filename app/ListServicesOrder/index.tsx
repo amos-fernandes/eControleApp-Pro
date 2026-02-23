@@ -226,12 +226,22 @@ function ListServicesOrder(): JSX.Element {
         {/* Header with Filter Button */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, backgroundColor: "#f8f9fa" }}>
           <Text style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>Ordens de Serviço</Text>
-          <TouchableOpacity onPress={() => setShowFilters(!showFilters)} style={{ padding: 8 }}>
-            <Text style={{ fontSize: 16, color: "#007AFF" }}>Filtros</Text>
+          <TouchableOpacity 
+            onPress={() => setShowFilters(true)} 
+            style={{ padding: 8, backgroundColor: "#007AFF", paddingHorizontal: 16, borderRadius: 8 }}
+          >
+            <Text style={{ fontSize: 16, color: "#fff", fontWeight: "bold" }}>📊 Filtros</Text>
           </TouchableOpacity>
         </View>
 
-        {showFilters && <ListServicesFilters />}
+        <ListServicesFilters 
+          visible={showFilters} 
+          onClose={() => setShowFilters(false)} 
+          onApplyFilters={() => {
+            console.log("🔄 Recarregando ordens com filtros aplicados...")
+            fetchOrders()
+          }} 
+        />
 
         {loading ? (
           <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

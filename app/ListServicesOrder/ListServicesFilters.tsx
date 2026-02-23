@@ -9,9 +9,10 @@ import { useFilterServiceOrderStore } from "@/stores/useFilterServiceOrder"
 interface ListServicesFiltersProps {
   visible: boolean
   onClose: () => void
+  onApplyFilters?: () => void
 }
 
-const ListServicesFilters: React.FC<ListServicesFiltersProps> = ({ visible, onClose }) => {
+const ListServicesFilters: React.FC<ListServicesFiltersProps> = ({ visible, onClose, onApplyFilters }) => {
   const { filters, setFilters, resetFilters } = useFilterServiceOrderStore()
   const [showStartDatePicker, setShowStartDatePicker] = useState(false)
   const [showEndDatePicker, setShowEndDatePicker] = useState(false)
@@ -48,6 +49,14 @@ const ListServicesFilters: React.FC<ListServicesFiltersProps> = ({ visible, onCl
     if (selectedDate) {
       setFilters({ end_date: moment(selectedDate).format("YYYY-MM-DD") })
     }
+  }
+
+  const handleApplyFilters = () => {
+    console.log("📊 Filtros aplicados:", filters)
+    if (onApplyFilters) {
+      onApplyFilters()
+    }
+    onClose()
   }
 
   return (
@@ -161,18 +170,35 @@ const ListServicesFilters: React.FC<ListServicesFiltersProps> = ({ visible, onCl
               )}
             </View>
 
-            <TouchableOpacity
-              onPress={resetFilters}
-              style={{
-                backgroundColor: "#ff6b6b",
-                padding: 15,
-                borderRadius: 8,
-                alignItems: "center",
-                marginTop: 20,
-              }}
-            >
-              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Limpar Filtros</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+              <TouchableOpacity
+                onPress={resetFilters}
+                style={{
+                  backgroundColor: "#6c757d",
+                  padding: 15,
+                  borderRadius: 8,
+                  flex: 1,
+                  marginRight: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Limpar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleApplyFilters}
+                style={{
+                  backgroundColor: "#007AFF",
+                  padding: 15,
+                  borderRadius: 8,
+                  flex: 1,
+                  marginLeft: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Aplicar</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </View>
       </View>
