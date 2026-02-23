@@ -123,6 +123,11 @@ export interface EmitMTROptions {
  */
 export async function getTokenCetesb(credentials: CetesbTokenRequest): Promise<string> {
   try {
+    console.log("🔑 Solicitando token CETESB...")
+    console.log("URL:", CETESB_TOKEN_URL)
+    console.log("CNPJ/CPF:", credentials.cpfCnpj)
+    console.log("Unidade:", credentials.unidade)
+    
     const response = await axios.post(
       CETESB_TOKEN_URL,
       {
@@ -134,28 +139,55 @@ export async function getTokenCetesb(credentials: CetesbTokenRequest): Promise<s
         headers: {
           "Content-Type": "application/json",
         },
-        timeout: 15000, // 15 segundos de timeout
+        timeout: 30000, // 30 segundos de timeout
+        validateStatus: (status) => status < 500, // Aceita status 4xx para tratar manualmente
       }
     );
+
+    console.log("Status da resposta:", response.status)
+
+    if (response.status !== 200) {
+      throw new Error(`CETESB retornou status ${response.status}: ${JSON.stringify(response.data)}`)
+    }
 
     // Verifico o token em vários campos de nomes possíveis (access_token, token, accessToken)
     const data = response.data;
     const token = data?.access_token || data?.token || data?.accessToken;
 
     if (!token) {
+      console.error("Token não encontrado na resposta:", JSON.stringify(data, null, 2))
       throw new Error(`Token not found in response. Fields: ${JSON.stringify(Object.keys(data))}`);
     }
 
+    console.log("✅ Token CETESB obtido com sucesso!")
     return token;
   } catch (error: any) {
+    console.error("❌ Erro ao obter token CETESB:", error)
+    
     const axiosError = error as AxiosError;
-    const responseBody = axiosError.response?.data
-      ? JSON.stringify(axiosError.response.data)
-      : "No response body";
+    let responseBody = "No response body";
+    
+    if (axiosError.response?.data) {
+      try {
+        responseBody = typeof axiosError.response.data === 'string' 
+          ? axiosError.response.data 
+          : JSON.stringify(axiosError.response.data)
+      } catch (e) {
+        responseBody = "Failed to parse response"
+      }
+    }
 
-    throw new Error(
-      `getTokenCetesb → ${error.message || "Unknown error"}. Response: ${responseBody}`
-    );
+    let errorMessage = `getTokenCetesb → ${error.message || "Unknown error"}`
+    
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = "Timeout ao conectar com CETESB. Tente novamente."
+    } else if (error.code === 'ENETUNREACH' || error.message?.includes('Network')) {
+      errorMessage = "Erro de conexão com CETESB. Verifique sua internet."
+    }
+    
+    errorMessage += `. Response: ${responseBody}`
+    
+    throw new Error(errorMessage)
   }
 }
 
@@ -174,24 +206,61 @@ export async function emitMTRWebhook(
   try {
     // Insiro o token como parâmetro de caminho na URL.
     const url = `${ECONTROL_EMIT_URL}/${accessToken}`;
+    
+    console.log("📤 Emitindo MTR via webhook...")
+    console.log("URL:", url)
+    console.log("Payload:", JSON.stringify(payload, null, 2))
+    console.log("Access Token:", accessToken.substring(0, 20) + "...")
 
     const response = await axios.post<EmitMTRResult>(url, payload, {
       headers: {
         "Content-Type": "application/json",
       },
-      timeout: 30000, // 30 segundos timeout
+      timeout: 60000, // 60 segundos timeout (emissão pode demorar)
+      validateStatus: (status) => status < 500,
     });
+
+    console.log("Status da resposta:", response.status)
+    console.log("Resposta:", JSON.stringify(response.data, null, 2))
+
+    if (response.status !== 200 && response.status !== 201) {
+      throw new Error(`eControle retornou status ${response.status}: ${JSON.stringify(response.data)}`)
+    }
 
     return response.data;
   } catch (error: any) {
+    console.error("❌ Erro ao emitir MTR webhook:", error)
+    
     const axiosError = error as AxiosError;
-    const responseBody = axiosError.response?.data
-      ? JSON.stringify(axiosError.response.data)
-      : "No response body";
+    let responseBody = "No response body";
+    
+    if (axiosError.response?.data) {
+      try {
+        responseBody = typeof axiosError.response.data === 'string' 
+          ? axiosError.response.data 
+          : JSON.stringify(axiosError.response.data)
+      } catch (e) {
+        responseBody = "Failed to parse response"
+      }
+    }
 
-    throw new Error(
-      `emitMTRWebhook → ${error.message || "Unknown error"}. Response: ${responseBody}`
-    );
+    let errorMessage = `emitMTRWebhook → ${error.message || "Unknown error"}`
+    
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = "Timeout ao conectar com eControle. Tente novamente."
+    } else if (error.code === 'ENETUNREACH' || error.message?.includes('Network')) {
+      errorMessage = "Erro de conexão com eControle (159.89.191.25:8000). Verifique se o servidor está acessível."
+    } else if (error.message?.includes('401') || error.message?.includes('403')) {
+      errorMessage = "Erro de autenticação. Token CETESB inválido ou expirado."
+    } else if (error.message?.includes('404')) {
+      errorMessage = "Endpoint não encontrado. Verifique a URL do webhook."
+    } else if (error.message?.includes('500') || error.message?.includes('502')) {
+      errorMessage = "Erro no servidor eControle. Tente novamente em alguns instantes."
+    }
+    
+    errorMessage += `. Response: ${responseBody}`
+    
+    throw new Error(errorMessage)
   }
 }
 

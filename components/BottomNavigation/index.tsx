@@ -1,6 +1,6 @@
 import React from "react"
 import { View, TouchableOpacity, Text } from "react-native"
-import { useRouter } from "expo-router"
+import { useNavigation } from "@react-navigation/native"
 import { WithLocalSvg } from "react-native-svg/css"
 
 interface BottomNavigationProps {
@@ -8,14 +8,14 @@ interface BottomNavigationProps {
 }
 
 function BottomNavigation({ currentScreen }: BottomNavigationProps) {
-  const router = useRouter()
+  const navigation = useNavigation()
 
   const navigateToServicesOrder = () => {
-    router.push("/ListServicesOrder")
+    navigation.navigate("ListServicesOrder")
   }
 
   const navigateToRoutes = () => {
-    router.push("/Routes")
+    navigation.navigate("Routes")
   }
 
   return (

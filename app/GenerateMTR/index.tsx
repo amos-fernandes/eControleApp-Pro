@@ -99,15 +99,24 @@ function GenerateMTR(): JSX.Element {
 
     setLoading(true)
     try {
+      console.log("=== INICIANDO EMISSÃO MTR ===")
+      console.log("Order ID:", orderId)
+      console.log("Company ID:", params.customerId || "1")
+      console.log("Tracking Code:", `OS-${orderId}`)
+      
       await emitirMTR({
         companyId: params.customerId || "1",
         serviceOrderId: String(orderId),
         trackingCode: `OS-${orderId}`,
         onStart: () => {
-          console.log("Iniciando emissão de MTR...")
+          console.log("▶️ Iniciando emissão de MTR...")
+          Alert.alert("⏳", "Emitindo MTR, aguarde...")
         },
         onSuccess: async (result) => {
+          console.log("✅ MTR emitido com sucesso!", result)
           setMtrId(String(result.mtr_id))
+          
+          // Mostra sucesso e pergunta se quer baixar
           Alert.alert(
             "✅ MTR Emitido!",
             `ID: ${result.mtr_id}`,
@@ -116,24 +125,58 @@ function GenerateMTR(): JSX.Element {
                 text: "Baixar PDF",
                 onPress: async () => {
                   try {
+                    console.log("📥 Baixando MTR PDF:", result.mtr_id)
                     await downloadMTRById(String(result.mtr_id), true)
                   } catch (error) {
-                    console.error("Erro ao baixar MTR PDF:", error)
+                    console.error("❌ Erro ao baixar MTR PDF:", error)
                     Alert.alert("Erro", "Não foi possível baixar o PDF da MTR")
                   }
                 },
               },
-              { text: "OK" },
+              {
+                text: "Voltar",
+                onPress: () => {
+                  console.log("⬅️ Voltando para lista de OS")
+                  navigation.navigate("ListServicesOrder")
+                }
+              },
             ]
           )
-          navigation.goBack()
         },
         onError: (err) => {
-          Alert.alert("❌ Erro", err.message || "Erro ao emitir MTR")
+          console.error("❌ ERRO NA EMISSÃO MTR:", err)
+          console.error("Error details:", {
+            message: err.message,
+            stack: err.stack,
+            name: err.name
+          })
+          
+          let errorMessage = err.message || "Erro ao emitir MTR"
+          
+          // Tratamento de erros de network
+          if (errorMessage.includes("Network Error") || errorMessage.includes("Network request failed")) {
+            errorMessage = "Erro de conexão. Verifique:\n\n1. Se o servidor 159.89.191.25:8000 está acessível\n2. Se suas credenciais CETESB estão corretas\n3. Sua conexão com a internet"
+          } else if (errorMessage.includes("Token")) {
+            errorMessage = "Erro ao obter token CETESB. Verifique suas credenciais no eas.json"
+          } else if (errorMessage.includes("401") || errorMessage.includes("403")) {
+            errorMessage = "Erro de autenticação. Verifique suas credenciais CETESB"
+          } else if (errorMessage.includes("404")) {
+            errorMessage = "Endpoint não encontrado. Verifique a URL do webhook"
+          } else if (errorMessage.includes("500") || errorMessage.includes("502")) {
+            errorMessage = "Erro no servidor. Tente novamente em alguns instantes"
+          }
+          
+          Alert.alert("❌ Erro", errorMessage, [
+            { text: "OK" },
+            { 
+              text: "Tentar Novamente", 
+              onPress: () => handleEmitirMTR() 
+            }
+          ])
         },
       })
     } catch (error: any) {
-      console.error("Erro ao emitir MTR:", error)
+      console.error("❌ ERRO GERAL:", error)
       Alert.alert("❌ Erro", error.message || "Erro ao emitir MTR")
     } finally {
       setLoading(false)
@@ -148,12 +191,19 @@ function GenerateMTR(): JSX.Element {
 
     setLoading(true)
     try {
+      console.log("📥 Baixando MTR:", mtrId)
       await downloadMTRById(mtrId, true)
     } catch (error: any) {
+      console.error("❌ Erro ao baixar MTR:", error)
       Alert.alert("❌ Erro", error.message || "Erro ao baixar MTR")
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleVoltar = () => {
+    console.log("⬅️ Voltando para ListServicesOrder")
+    navigation.navigate("ListServicesOrder")
   }
 
   if (hasPermission === null) {
@@ -182,6 +232,18 @@ function GenerateMTR(): JSX.Element {
           }}
         >
           <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Emitir MTR (sem foto)</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleVoltar}
+          style={{
+            backgroundColor: "#6c757d",
+            padding: 15,
+            borderRadius: 8,
+            marginTop: 10,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>Voltar</Text>
         </TouchableOpacity>
       </ScrollView>
     )
@@ -300,6 +362,7 @@ function GenerateMTR(): JSX.Element {
             backgroundColor: "#4CAF50",
             padding: 15,
             borderRadius: 8,
+            marginBottom: 10,
             alignItems: "center",
             opacity: loading ? 0.6 : 1,
           }}
@@ -312,6 +375,20 @@ function GenerateMTR(): JSX.Element {
           )}
         </TouchableOpacity>
       )}
+
+      {/* Botão Voltar */}
+      <TouchableOpacity
+        onPress={handleVoltar}
+        style={{
+          backgroundColor: "#6c757d",
+          padding: 15,
+          borderRadius: 8,
+          marginBottom: 20,
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>⬅️ Voltar</Text>
+      </TouchableOpacity>
 
       {/* Informações adicionais */}
       <View
@@ -328,7 +405,8 @@ function GenerateMTR(): JSX.Element {
         <Text style={{ fontSize: 12, color: "#666", lineHeight: 18 }}>
           • A MTR será emitida usando as credenciais CETESB configuradas{"\n"}
           • O PDF será gerado automaticamente após a emissão{"\n"}
-          • A foto é opcional e serve como comprovante adicional
+          • A foto é opcional e serve como comprovante adicional{"\n"}
+          • Servidor: 159.89.191.25:8000
         </Text>
       </View>
     </ScrollView>
