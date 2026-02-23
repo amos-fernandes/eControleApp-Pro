@@ -9,6 +9,7 @@ interface FilterServiceOrderState {
     start_date?: string
     end_date?: string
     voyage: string
+    route_name?: string
   }
 }
 export const getServicesOrders = async ({ filters }: FilterServiceOrderState) => {
