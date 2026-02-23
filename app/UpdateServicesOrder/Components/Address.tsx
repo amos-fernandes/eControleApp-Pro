@@ -4,7 +4,17 @@ import { TextButton } from "../../../components/GlobalStyles/styles"
 import { CardContainer, TextBold, Text, Header, Background, ContainerText, Button } from "../styles"
 
 export const Address = ({ address }: any) => {
-  const URL = `https://www.google.com/maps/search/?api=1&query=${address.latitude},${address.longitude}`
+  // Corrige latitude/longitude null ou undefined
+  const lat = address?.latitude || address?.lat
+  const lng = address?.longitude || address?.lng || address?.longitude
+  
+  const hasValidCoordinates = lat && lng && 
+                              parseFloat(lat) !== 0 && 
+                              parseFloat(lng) !== 0
+  
+  const URL = hasValidCoordinates
+    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+    : null
 
   return (
     <CardContainer style={{ marginTop: 20 }}>
@@ -50,9 +60,15 @@ export const Address = ({ address }: any) => {
           </View>
         </ContainerText>
         <View style={{ alignItems: "flex-end" }}>
-          <Button onPress={() => Linking.openURL(URL)}>
-            <TextButton>Localização</TextButton>
-          </Button>
+          {URL ? (
+            <Button onPress={() => Linking.openURL(URL)}>
+              <TextButton>📍 Localização</TextButton>
+            </Button>
+          ) : (
+            <Text style={{ fontSize: 12, color: "#999", fontStyle: "italic" }}>
+              Coordenadas não disponíveis
+            </Text>
+          )}
         </View>
       </Background>
     </CardContainer>
